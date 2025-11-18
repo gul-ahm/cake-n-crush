@@ -11,8 +11,6 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 3001
       - key: ADMIN_USERNAME
         sync: false
       - key: ADMIN_PASSWORD
