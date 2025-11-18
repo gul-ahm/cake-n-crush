@@ -28,4 +28,8 @@
   ],
   "author": "Cake N Crush",
   "license": "ISC"
+  ,
+  "engines": {
+    "node": "20.x"
+  }
 }

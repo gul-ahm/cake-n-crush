@@ -26,7 +26,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-icons": "^5.5.0",
-    "react-leaflet": "^5.0.0",
+    "react-leaflet": "^4.2.1",
     "react-router-dom": "^6.26.2",
     "simple-icons": "^13.19.0",
     "helmet": "^7.1.0",
@@ -45,5 +45,10 @@
   },
   "overrides": {
     "glob": "^11.0.4"
-  }
+  },
+  "engines": {
+    "node": "20.x",
+    "npm": ">=10"
+  },
+  "packageManager": "npm@10.8.2"
 }
