@@ -51,17 +51,18 @@ export default function ParallaxHero(){
 
   return (
     <div ref={ref} className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-pink-100 via-white to-amber-50 dark:from-pink-900/20 dark:via-neutral-900 dark:to-amber-900/10">
-      <div className="absolute -top-10 -left-10 w-72 h-72 rounded-full bg-pink-300/40 blur-3xl p-layer-1" />
-      <div className="absolute -bottom-12 -right-12 w-80 h-80 rounded-full bg-amber-300/40 blur-3xl p-layer-2" />
-      <div className="absolute top-1/2 left-1/3 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-fuchsia-300/30 blur-3xl p-layer-3" />
-      <div className="relative px-6 py-16 md:px-12 md:py-24 text-center">
+      <div className="absolute -top-10 -left-10 w-72 h-72 rounded-full bg-pink-300/40 blur-3xl p-layer-1 z-0" />
+      <div className="absolute -bottom-12 -right-12 w-80 h-80 rounded-full bg-amber-300/40 blur-3xl p-layer-2 z-0" />
+      <div className="absolute top-1/2 left-1/3 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-fuchsia-300/30 blur-3xl p-layer-3 z-0" />
+      <div className="relative z-20 px-6 py-16 md:px-12 md:py-24 text-center">
         <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight">Artful Cakes, Animated Delight</h2>
         <p className="mt-3 text-neutral-700 dark:text-neutral-300 max-w-2xl mx-auto">Elevated visuals and motion bringing Cake N Crush to life. Explore designs, order via WhatsApp, and find us with animated geolocation.</p>
-        <div className="pointer-events-none">
-          <div className="fg-1 absolute left-6 md:left-16 bottom-6 md:bottom-10 w-28 md:w-36 aspect-square rounded-2xl bg-white/80 dark:bg-zinc-900/70 border shadow-lg backdrop-blur flex items-center justify-center text-4xl">🍰</div>
-          <div className="fg-2 absolute right-10 md:right-20 bottom-8 md:bottom-16 w-24 md:w-32 aspect-square rounded-full bg-white/80 dark:bg-zinc-900/70 border shadow-lg backdrop-blur flex items-center justify-center text-3xl">🧁</div>
-          <div className="fg-3 absolute left-1/2 -translate-x-1/2 -bottom-4 md:-bottom-2 w-32 md:w-40 aspect-[4/3] rounded-2xl bg-white/80 dark:bg-zinc-900/70 border shadow-lg backdrop-blur flex items-center justify-center text-4xl">🎂</div>
-        </div>
+      </div>
+      {/* Floating badges anchored to hero container, layered behind text */}
+      <div className="pointer-events-none absolute inset-0 z-10" aria-hidden="true">
+        <div className="fg-1 absolute left-6 md:left-16 bottom-6 md:bottom-10 w-28 md:w-36 aspect-square rounded-2xl bg-white/80 dark:bg-zinc-900/70 border shadow-lg backdrop-blur flex items-center justify-center text-4xl">🍰</div>
+        <div className="fg-2 absolute right-10 md:right-20 bottom-8 md:bottom-16 w-24 md:w-32 aspect-square rounded-full bg-white/80 dark:bg-zinc-900/70 border shadow-lg backdrop-blur flex items-center justify-center text-3xl">🧁</div>
+        <div className="fg-3 absolute left-1/2 -translate-x-1/2 -bottom-4 md:-bottom-2 w-32 md:w-40 aspect-[4/3] rounded-2xl bg-white/80 dark:bg-zinc-900/70 border shadow-lg backdrop-blur flex items-center justify-center text-4xl">🎂</div>
       </div>
     </div>
   )
