@@ -9,6 +9,7 @@
     "start:all": "npm run dev:all",
     "build:frontend": "vite build",
     "build:prod": "npm run build:frontend",
+    "start": "npm run start:prod",
     "start:prod": "node ./server/index.js",
     "build": "vite build",
     "preview": "vite preview",
