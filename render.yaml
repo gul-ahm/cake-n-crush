@@ -3,7 +3,6 @@ services:
     name: cake-n-crush
     env: node
     plan: free
-    region: frankfurt
     buildCommand: npm ci && npm run build:frontend
     startCommand: npm run start:prod
     healthCheckPath: /health
