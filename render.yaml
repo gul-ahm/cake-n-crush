@@ -3,7 +3,7 @@ services:
     name: cake-n-crush
     env: node
     plan: free
-    buildCommand: npm ci && npm run build:frontend
+    buildCommand: npm install --include=dev && npm run build:frontend
     startCommand: npm run start:prod
     healthCheckPath: /health
     autoDeploy: true
