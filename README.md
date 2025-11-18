@@ -1,5 +1,7 @@
 # Cake N Crush — Bakery Portfolio
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/gul-ahm/cake-n-crush)
+
 A visually rich, animated bakery portfolio for Chef Tamanna Arzoo with admin-only image management, WhatsApp ordering, social media integration, and animated geolocation.
 
 ## Tech Stack
