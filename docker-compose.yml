@@ -1,0 +1,39 @@
+version: '3.9'
+services:
+  cake-n-crush:
+    build: .
+    container_name: cake-n-crush
+    ports:
+      - "3001:3001"
+    environment:
+      ADMIN_USERNAME: ${ADMIN_USERNAME}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      SESSION_TIMEOUT: ${SESSION_TIMEOUT:-3600000}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      PORT: 3001
+      COOKIE_AUTH: ${COOKIE_AUTH:-true}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      COOKIE_SAMESITE: ${COOKIE_SAMESITE:-Strict}
+      VERBOSE_AUTH_LOGS: ${VERBOSE_AUTH_LOGS:-false}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/health',r=>{if(r.statusCode===200)process.exit(0);else process.exit(1);}).on('error',()=>process.exit(1));"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    # Uncomment to add resource limits
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '0.50'
+    #       memory: 512M
+    #   restart_policy:
+    #     condition: on-failure
+
+# Usage:
+# 1. Create a .env.production (NOT committed) with required variables.
+# 2. Run: docker compose --env-file .env.production up -d --build
+# 3. Check: docker logs -f cake-n-crush
+# 4. Health: docker inspect --format='{{json .State.Health}}' cake-n-crush

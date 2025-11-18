@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root {
+  height: 100%;
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  backdrop-filter: blur(6px);
+}
+
+/* Basic dark mode surface colors */
+.dark body { background-color: #0a0a0a; color: #e5e7eb; }
+.dark .glass { background: rgba(17, 24, 39, 0.5); }
+
+/* Typography */
+body { font-family: Poppins, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"; }
+h1, h2, h3, .font-display { font-family: "Playfair Display", serif; }
+
+/* Gradient text utility */
+.text-gradient {
+  background: linear-gradient(90deg, #ec4899, #f59e0b);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Animated blob background utility */
+.bg-animated {
+  position: relative;
+}
+.bg-animated:before, .bg-animated:after {
+  content: "";
+  position: absolute;
+  width: 24rem; height: 24rem;
+  border-radius: 9999px;
+  filter: blur(60px);
+  opacity: .35;
+  z-index: -1;
+  animation: float 12s ease-in-out infinite;
+}
+.bg-animated:before { background: #f472b6; top: -6rem; left: -6rem; }
+.bg-animated:after { background: #fbbf24; bottom: -6rem; right: -6rem; animation-delay: 3s; }
+
+@keyframes float {
+  0%,100% { transform: translateY(0) }
+  50% { transform: translateY(-20px) }
+}
+
+/* Tilt card perspective helper */
+.tilt-container { perspective: 1000px; }
+
