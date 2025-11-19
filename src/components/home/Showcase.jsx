@@ -225,6 +225,7 @@ export default function Showcase(){
     <section 
       ref={ref} 
       className="my-20 rounded-2xl border bg-animated overflow-hidden min-h-[40vh] md:min-h-[70vh] flex flex-col justify-center"
+      style={{ isolation: 'isolate' }}
     >
       <div className="px-4 sm:px-6 py-6 sm:py-8">
         <h3 className="font-display text-gradient text-xl sm:text-2xl md:text-3xl">Signature Showcase</h3>
@@ -238,7 +239,7 @@ export default function Showcase(){
       {isMobile ? (
         // MOBILE: 3D Stacked card swipe effect (like reference image)
         <div 
-          className="relative w-full flex-1 flex items-center justify-center py-8 px-4 sm:px-6"
+          className="relative w-full flex-1 flex items-center justify-center py-8 px-4 sm:px-6 overflow-hidden"
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
           style={{
@@ -246,9 +247,9 @@ export default function Showcase(){
             background: 'radial-gradient(ellipse at center, rgba(0,0,0,0) 0%, rgba(0,0,0,0.3) 100%)',
           }}
         >
-          {/* 3D Stacked cards container */}
+          {/* 3D Stacked cards container - FIXED WIDTH to prevent overflow */}
           <div 
-            className="relative w-full max-w-sm h-96"
+            className="relative max-w-xs w-full h-96"
             style={{
               transformStyle: 'preserve-3d',
             }}
