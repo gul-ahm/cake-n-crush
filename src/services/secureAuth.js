@@ -1,7 +1,8 @@
 // Secure Authentication Service
 class SecureAuthService {
   constructor() {
-    this.apiEndpoint = import.meta.env.VITE_ADMIN_API_ENDPOINT;
+    // Base API endpoint for auth: allow env override, else default relative path
+    this.apiEndpoint = import.meta.env.VITE_ADMIN_API_ENDPOINT || '/api/auth';
     this.handshakeToken = null;
     this.handshakeExpiry = 0;
     // Legacy token/user storage removed for cookie-based auth
