@@ -320,9 +320,10 @@ export default function Showcase(){
                 const zOffset = -positionFromFront * 40 // Negative = behind, positive = in front
                 const yOffset = Math.abs(positionFromFront) * 8 // Cards move down as they go back
                 
-                // Blur increases for background cards
-                const blur = Math.max(0, Math.abs(positionFromFront) * 4)
-                const opacity = Math.max(0.4, 1 - Math.abs(positionFromFront) * 0.3)
+                // Blur: Only blur when card is NOT in focus (positionFromFront !== 0)
+                // Front card (0) is always sharp, background cards blur increases with distance
+                const blur = positionFromFront === 0 ? 0 : Math.max(0, Math.abs(positionFromFront) * 5)
+                const opacity = positionFromFront === 0 ? 1 : Math.max(0.5, 1 - Math.abs(positionFromFront) * 0.3)
                 
                 return (
                   <div
