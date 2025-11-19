@@ -8,7 +8,19 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const cookieParser = require('cookie-parser');
 const crypto = require('crypto');
+const fs = require('fs');
+
+// Load root .env first (local dev) then Render secret file if present
 require('dotenv').config();
+const secretEnvPath = '/etc/secrets/.env';
+if (fs.existsSync(secretEnvPath)) {
+  try {
+    require('dotenv').config({ path: secretEnvPath });
+    console.log('🔐 Loaded secret file /etc/secrets/.env');
+  } catch (e) {
+    console.warn('⚠️ Failed to load secret file /etc/secrets/.env:', e.message);
+  }
+}
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -18,6 +30,9 @@ const DIST_DIR = process.env.DIST_DIR || path.join(__dirname, '..', 'dist');
 console.log('🚀 Starting production server');
 console.log('📁 Serving dist from:', DIST_DIR);
 console.log('🔧 NODE_ENV:', process.env.NODE_ENV);
+console.log('🔍 INTERNAL_API_KEY present at load:', !!process.env.INTERNAL_API_KEY);
+console.log('🔍 ADMIN_USERNAME present:', !!process.env.ADMIN_USERNAME);
+console.log('🔍 JWT_SECRET present:', !!process.env.JWT_SECRET);
 
 // Derived config
 const isProd = process.env.NODE_ENV === 'production';
@@ -123,18 +138,26 @@ try {
 // Internal API key for handshake (dev-friendly fallback when not production)
 let internalApiKey = process.env.INTERNAL_API_KEY;
 if (!internalApiKey) {
-  if (!isProd) {
-    internalApiKey = crypto.randomBytes(32).toString('hex');
-    console.warn('⚠️ INTERNAL_API_KEY missing - generated ephemeral DEV key (handshake enabled for local/test). Set INTERNAL_API_KEY for production.');
-  } else {
-    // Production: generate a persistent key stored in memory (will persist for server lifecycle)
-    // For true persistence, use a database or file-based store
-    internalApiKey = crypto.randomBytes(32).toString('hex');
-    console.warn('⚠️ INTERNAL_API_KEY missing in production - generated ephemeral key. Handshake will work but will reset on server restart.');
-    console.warn('⚠️ RECOMMENDATION: Set INTERNAL_API_KEY environment variable in Render dashboard for consistent authentication.');
+  // Attempt second-chance load (in case secret file mounted after initial require)
+  if (fs.existsSync(secretEnvPath)) {
+    const contents = fs.readFileSync(secretEnvPath, 'utf8');
+    const match = contents.match(/INTERNAL_API_KEY\s*=\s*(.*)/);
+    if (match && match[1]) {
+      internalApiKey = match[1].replace(/['"\r\n]/g, '').trim();
+      console.log('🔑 INTERNAL_API_KEY loaded directly from secret file contents');
+    }
   }
 }
-if (internalApiKey) console.log('🔑 Internal API key loaded'); else console.warn('⚠️ INTERNAL_API_KEY missing');
+if (!internalApiKey) {
+  // Fallback: ALWAYS generate ephemeral key so handshake never blocks UI
+  internalApiKey = crypto.randomBytes(32).toString('hex');
+  if (isProd) {
+    console.warn('⚠️ INTERNAL_API_KEY missing in production - using ephemeral in-memory key (will rotate on restart). Set a persistent INTERNAL_API_KEY in Render.');
+  } else {
+    console.warn('⚠️ INTERNAL_API_KEY missing - generated DEV ephemeral key.');
+  }
+}
+console.log('🔑 Internal API key loaded (length):', internalApiKey.length);
 
 // Handshake endpoint (short-lived) with rate limiter
 app.get('/api/auth/handshake', handshakeLimiter, (req, res) => {
