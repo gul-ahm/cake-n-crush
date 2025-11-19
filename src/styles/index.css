@@ -6,6 +6,22 @@ html, body, #root {
   height: 100%;
 }
 
+/* Android/Mobile performance optimizations */
+@supports (animation: test) {
+  * {
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Optimize animations for mobile */
+@media (max-width: 768px) {
+  * {
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+  }
+}
+
 .glass {
   background: rgba(255, 255, 255, 0.25);
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
