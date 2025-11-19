@@ -122,21 +122,32 @@ try {
 
 // Internal API key for handshake (dev-friendly fallback when not production)
 let internalApiKey = process.env.INTERNAL_API_KEY;
-if (!internalApiKey && !isProd) {
-  internalApiKey = crypto.randomBytes(32).toString('hex');
-  console.warn('⚠️ INTERNAL_API_KEY missing - generated ephemeral DEV key (handshake enabled for local/test). Set INTERNAL_API_KEY for production.');
+if (!internalApiKey) {
+  if (!isProd) {
+    internalApiKey = crypto.randomBytes(32).toString('hex');
+    console.warn('⚠️ INTERNAL_API_KEY missing - generated ephemeral DEV key (handshake enabled for local/test). Set INTERNAL_API_KEY for production.');
+  } else {
+    // Production: generate a persistent key stored in memory (will persist for server lifecycle)
+    // For true persistence, use a database or file-based store
+    internalApiKey = crypto.randomBytes(32).toString('hex');
+    console.warn('⚠️ INTERNAL_API_KEY missing in production - generated ephemeral key. Handshake will work but will reset on server restart.');
+    console.warn('⚠️ RECOMMENDATION: Set INTERNAL_API_KEY environment variable in Render dashboard for consistent authentication.');
+  }
 }
 if (internalApiKey) console.log('🔑 Internal API key loaded'); else console.warn('⚠️ INTERNAL_API_KEY missing');
 
 // Handshake endpoint (short-lived) with rate limiter
 app.get('/api/auth/handshake', handshakeLimiter, (req, res) => {
-  if (!internalApiKey) return res.status(500).json({ success: false, message: 'Handshake disabled' });
+  if (!internalApiKey) {
+    if (verboseAuth) console.error('Handshake failed: INTERNAL_API_KEY is empty');
+    return res.status(500).json({ success: false, message: 'Handshake disabled - server misconfiguration' });
+  }
   try {
     const token = jwt.sign({ type: 'handshake', nonce: Date.now() }, internalApiKey, { expiresIn: '30s' });
     res.json({ success: true, handshake: token, expiresIn: 30000 });
   } catch (e) {
-    if (verboseAuth) console.error('Handshake error:', e);
-    res.status(500).json({ success: false, message: 'Handshake error' });
+    if (verboseAuth) console.error('Handshake error:', e.message);
+    res.status(500).json({ success: false, message: 'Handshake error - JWT signing failed' });
   }
 });
 
@@ -145,19 +156,45 @@ app.post('/api/auth/login', loginLimiter, attemptGate, async (req, res) => {
   try {
     const { username, password, handshake } = req.body;
     if (!handshake) return res.status(400).json({ success: false, message: 'Missing handshake' });
+    
+    // Verify handshake token
+    if (!internalApiKey) {
+      if (verboseAuth) console.error('Login failed: INTERNAL_API_KEY is empty');
+      return res.status(500).json({ success: false, message: 'Server error - authentication service unavailable' });
+    }
+    
     try {
       const decoded = jwt.verify(handshake, internalApiKey);
       if (decoded.type !== 'handshake') throw new Error('Bad type');
-    } catch {
-      return res.status(401).json({ success: false, message: 'Handshake invalid/expired' });
+    } catch (e) {
+      if (verboseAuth) console.error('Handshake verification failed:', e.message);
+      return res.status(401).json({ success: false, message: 'Handshake invalid/expired. Ensure auth server is running and INTERNAL_API_KEY is set.' });
     }
+    
+    // Verify credentials
+    if (!process.env.ADMIN_USERNAME || !hashedPassword) {
+      if (verboseAuth) console.error('Login failed: ADMIN_USERNAME or ADMIN_PASSWORD not configured');
+      return res.status(500).json({ success: false, message: 'Server error - admin credentials not configured' });
+    }
+    
     const userOk = username === process.env.ADMIN_USERNAME;
     let passOk = false;
     if (hashedPassword && password) passOk = await bcrypt.compare(password, hashedPassword);
+    
     if (!userOk || !passOk) {
-      const rec = req._attemptRec; rec.fails++; rec.last = Date.now(); authAttempts.set(req.ip, rec);
+      const rec = req._attemptRec; 
+      rec.fails++; 
+      rec.last = Date.now(); 
+      authAttempts.set(req.ip, rec);
+      if (verboseAuth) console.warn(`Failed login attempt from ${req.ip} - invalid credentials`);
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
+    
+    if (!process.env.JWT_SECRET) {
+      if (verboseAuth) console.error('Login failed: JWT_SECRET not configured');
+      return res.status(500).json({ success: false, message: 'Server error - JWT secret not configured' });
+    }
+    
     const token = jwt.sign({ user: username, role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '1h' });
     // Set secure cookie
     res.cookie('auth_token', token, {
@@ -169,6 +206,7 @@ app.post('/api/auth/login', loginLimiter, attemptGate, async (req, res) => {
       path: '/'
     });
     authAttempts.delete(req.ip);
+    if (verboseAuth) console.log(`Successful login for user: ${username}`);
     res.json({ success: true, message: 'Authentication successful', expiresIn: 3600000 });
   } catch (e) {
     if (verboseAuth) console.error('Auth error:', e);
