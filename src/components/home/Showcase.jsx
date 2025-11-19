@@ -374,7 +374,15 @@ export default function Showcase(){
             }}
           >
             {list.map((it, idx) => (
-              <div key={it.id} className="sc-card">
+              <div 
+                key={it.id} 
+                className="sc-card flex-shrink-0"
+                style={{
+                  width: '320px',
+                  height: '380px',
+                  minWidth: '320px',
+                }}
+              >
                 <ShowcaseCard item={it} index={idx} total={list.length} />
               </div>
             ))}
