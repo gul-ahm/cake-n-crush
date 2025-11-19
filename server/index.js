@@ -249,6 +249,24 @@ app.post('/api/auth/verify', (req, res) => {
   }
 });
 
+// Debug endpoint (sanitized) to inspect auth configuration (do NOT expose secrets)
+app.get('/api/auth/debug', (req, res) => {
+  res.json({
+    success: true,
+    nodeEnv: process.env.NODE_ENV,
+    adminUserPresent: !!process.env.ADMIN_USERNAME,
+    jwtSecretPresent: !!process.env.JWT_SECRET,
+    internalApiKeyPresent: !!internalApiKey,
+    internalApiKeyLength: internalApiKey ? internalApiKey.length : 0,
+    corsOrigin: allowedOrigin,
+    cookie: {
+      secure: cookieSecure,
+      sameSite: cookieSameSite,
+      domain: cookieDomain || null
+    }
+  });
+});
+
 // Logout - clears cookie
 app.post('/api/auth/logout', (req, res) => {
   res.clearCookie('auth_token', { path: '/', httpOnly: true });
