@@ -282,9 +282,9 @@ export default function Showcase(){
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
           style={{
-            perspective: '1200px',
-            background: 'radial-gradient(ellipse at center, rgba(0,0,0,0) 0%, rgba(0,0,0,0.3) 100%)',
-            touchAction: 'none', // Prevent default touch scrolling
+            perspective: '1600px', // Increased perspective for better fan depth effect
+            background: 'radial-gradient(ellipse at center, rgba(0,0,0,0) 0%, rgba(0,0,0,0.2) 100%)',
+            touchAction: 'none',
             WebkitTouchCallout: 'none',
             WebkitUserSelect: 'none',
             userSelect: 'none',
@@ -305,25 +305,37 @@ export default function Showcase(){
                 const positionFromFront = idx - focusedCardIndex
                 
                 // Only show cards within reasonable distance
-                if (positionFromFront < -1 || positionFromFront > 3) return null
+                if (positionFromFront < -2 || positionFromFront > 2) return null
                 
-                // REVERSE: Front card is SMALL, back cards are BIG and BLURRED
-                const scale = 1 + Math.abs(positionFromFront) * 0.12
-                const yOffset = -positionFromFront * 20
-                const zOffset = positionFromFront * 60
-                const blur = Math.max(0, Math.abs(positionFromFront) * 5)
-                const opacity = positionFromFront === 0 ? 1 : 0.7
+                // FAN EFFECT: Cards arranged in a semi-circle/fan pattern
+                // Front card (positionFromFront = 0) is center
+                // Behind cards rotate outward with increasing angle
+                const baseScale = 0.95
+                const scale = baseScale + Math.max(0, -positionFromFront) * 0.06 // Back cards slightly larger
+                
+                // Fan rotation angle (degrees) - creates the semi-circular spread
+                const rotationAngle = positionFromFront * 12 // Each card rotates 12 degrees
+                
+                // Stacking depth with perspective
+                const zOffset = -positionFromFront * 40 // Negative = behind, positive = in front
+                const yOffset = Math.abs(positionFromFront) * 8 // Cards move down as they go back
+                
+                // Blur increases for background cards
+                const blur = Math.max(0, Math.abs(positionFromFront) * 4)
+                const opacity = Math.max(0.4, 1 - Math.abs(positionFromFront) * 0.3)
                 
                 return (
                   <div
                     key={item.id}
                     className="absolute inset-0 w-full h-full"
                     style={{
-                      transform: `translateY(${yOffset}px) translateZ(${zOffset}px) scale(${scale})`,
-                      transition: !isAnimating && (positionFromFront === 0 || positionFromFront === 1 || positionFromFront === -1)
-                        ? 'transform 0.3s linear' // Use linear easing for Android smoothness
+                      // Fan effect: rotateZ creates the spread, translateZ adds depth
+                      transform: `rotateZ(${rotationAngle}deg) translateY(${yOffset}px) translateZ(${zOffset}px) scale(${scale})`,
+                      transition: !isAnimating && (positionFromFront === 0 || positionFromFront === 1 || positionFromFront === -1 || positionFromFront === 2 || positionFromFront === -2)
+                        ? 'transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)' // Smooth spring-like easing for fan effect
                         : 'none',
                       transformStyle: 'preserve-3d',
+                      transformOrigin: 'center center',
                       filter: blur > 0 ? `blur(${blur}px)` : 'none',
                       opacity: opacity,
                       pointerEvents: positionFromFront === 0 ? 'auto' : 'none',
