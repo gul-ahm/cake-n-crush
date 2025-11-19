@@ -6,8 +6,70 @@ import { playSwipeSound, playCardFlipSound } from '../../utils/soundEffects'
 
 gsap.registerPlugin(ScrollTrigger)
 
+// Lightbox Modal Component
+const ImageLightbox = memo(({ image, title, isOpen, onClose }) => {
+  if (!isOpen) return null
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+      onClick={onClose}
+      style={{
+        animation: 'fadeIn 0.3s ease-out',
+      }}
+    >
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes scaleIn {
+          from { transform: scale(0.85); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
+        }
+      `}</style>
+      
+      <div
+        className="relative max-w-4xl max-h-screen w-full mx-4"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          animation: 'scaleIn 0.3s ease-out',
+        }}
+      >
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute -top-10 right-0 z-10 text-white hover:text-gray-300 transition-colors"
+          aria-label="Close lightbox"
+        >
+          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        {/* Image container */}
+        <div className="bg-black rounded-lg overflow-hidden shadow-2xl">
+          <img
+            src={image}
+            alt={title}
+            className="w-full h-auto max-h-screen object-contain"
+            onClick={onClose}
+          />
+        </div>
+
+        {/* Image title */}
+        <div className="mt-4 text-center text-white/90 text-lg font-semibold">
+          {title}
+        </div>
+      </div>
+    </div>
+  )
+})
+
+ImageLightbox.displayName = 'ImageLightbox'
+
 // Memoized card component for performance
-const ShowcaseCard = memo(({ item, index, total }) => {
+const ShowcaseCard = memo(({ item, index, total, onImageClick }) => {
   const [imageLoaded, setImageLoaded] = useState(false)
   const imgRef = useRef(null)
 
@@ -33,37 +95,51 @@ const ShowcaseCard = memo(({ item, index, total }) => {
     return () => observer.disconnect()
   }, [])
 
+  const handleImageClick = () => {
+    if (item.images?.[0]) {
+      onImageClick(item.images[0], item.name)
+    }
+  }
+
   return (
     <div 
-      className="rounded-xl overflow-hidden border-2 border-white/40 shadow-2xl bg-white/70 dark:bg-neutral-900/60 backdrop-blur h-full"
+      className="rounded-xl overflow-hidden border-2 border-white/40 shadow-2xl bg-white/70 dark:bg-neutral-900/60 backdrop-blur h-full cursor-pointer transition-transform hover:scale-105"
+      onClick={handleImageClick}
       style={{
-        cursor: 'pointer',
         willChange: 'transform, filter',
         WebkitBackfaceVisibility: 'hidden',
         backfaceVisibility: 'hidden',
       }}
     >
       <div 
-        className="w-full h-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden flex items-center justify-center"
+        className="w-full h-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden flex items-center justify-center relative"
         style={{ 
           contain: 'layout style paint',
           WebkitFontSmoothing: 'antialiased',
         }}
       >
         {item.images?.[0] ? (
-          <img 
-            ref={imgRef}
-            data-src={item.images[0]}
-            alt={item.name}
-            decoding="async"
-            className={`w-full h-full object-cover transition-opacity duration-300 ${
-              imageLoaded ? 'opacity-100' : 'opacity-0'
-            }`}
-            style={{ 
-              willChange: imageLoaded ? 'auto' : 'opacity',
-              WebkitBackfaceVisibility: 'hidden',
-            }}
-          />
+          <>
+            <img 
+              ref={imgRef}
+              data-src={item.images[0]}
+              alt={item.name}
+              decoding="async"
+              className={`w-full h-full object-cover transition-opacity duration-300 ${
+                imageLoaded ? 'opacity-100' : 'opacity-0'
+              }`}
+              style={{ 
+                willChange: imageLoaded ? 'auto' : 'opacity',
+                WebkitBackfaceVisibility: 'hidden',
+              }}
+            />
+            {/* Hover overlay */}
+            <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition-colors flex items-center justify-center">
+              <svg className="w-12 h-12 text-white opacity-0 hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7" />
+              </svg>
+            </div>
+          </>
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-purple-200 to-pink-200 dark:from-purple-900 dark:to-pink-900 flex items-center justify-center">
             <span className="text-5xl opacity-50">🍰</span>
@@ -80,6 +156,7 @@ const ShowcaseCard = memo(({ item, index, total }) => {
 })
 
 ShowcaseCard.displayName = 'ShowcaseCard'
+
 export default function Showcase(){
   const { items } = usePortfolio()
   const ref = useRef(null)
@@ -89,6 +166,9 @@ export default function Showcase(){
   const [touchStart, setTouchStart] = useState(0)
   const [touchStartY, setTouchStartY] = useState(0)
   const [isAnimating, setIsAnimating] = useState(false)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [lightboxImage, setLightboxImage] = useState(null)
+  const [lightboxTitle, setLightboxTitle] = useState('')
   const audioContextRef = useRef(null)
   const lastSwipeTime = useRef(0)
   const containerRef = useRef(null)
@@ -99,6 +179,37 @@ export default function Showcase(){
   const list = useMemo(() => 
     items.length ? items : Array.from({ length: 8 }).map((_,i)=>({ id:`ph-${i}`, name:`Signature ${i+1}`, images:[] }))
   , [items])
+
+  // Handle image click to open lightbox
+  const handleImageClick = useCallback((image, title) => {
+    setLightboxImage(image)
+    setLightboxTitle(title)
+    setLightboxOpen(true)
+  }, [])
+
+  // Close lightbox and escape key handler
+  const handleCloseLightbox = useCallback(() => {
+    setLightboxOpen(false)
+    setLightboxImage(null)
+    setLightboxTitle('')
+  }, [])
+
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && lightboxOpen) {
+        handleCloseLightbox()
+      }
+    }
+    
+    if (lightboxOpen) {
+      window.addEventListener('keydown', handleEscape)
+      document.body.style.overflow = 'hidden'
+      return () => {
+        window.removeEventListener('keydown', handleEscape)
+        document.body.style.overflow = 'unset'
+      }
+    }
+  }, [lightboxOpen, handleCloseLightbox])
 
   // Detect mobile resize with debouncing
   useEffect(() => {
@@ -349,6 +460,7 @@ export default function Showcase(){
                       item={item}
                       index={idx}
                       total={list.length}
+                      onImageClick={handleImageClick}
                     />
                   </div>
                 )
@@ -384,7 +496,7 @@ export default function Showcase(){
                   minWidth: '320px',
                 }}
               >
-                <ShowcaseCard item={it} index={idx} total={list.length} />
+                <ShowcaseCard item={it} index={idx} total={list.length} onImageClick={handleImageClick} />
               </div>
             ))}
           </div>
@@ -397,6 +509,14 @@ export default function Showcase(){
           👆 Swipe smoothly for best effect
         </div>
       )}
+
+      {/* Image Lightbox Modal */}
+      <ImageLightbox 
+        image={lightboxImage}
+        title={lightboxTitle}
+        isOpen={lightboxOpen}
+        onClose={handleCloseLightbox}
+      />
     </section>
   )
 }
