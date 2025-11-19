@@ -14,7 +14,7 @@ Set these for ANY production method (do not commit values):
 | `SESSION_TIMEOUT` | Session TTL in ms (should match token expiry) | `3600000` |
 | `INTERNAL_API_KEY` | Handshake signing key (rotate periodically) | `INTERNAL_SUPER_SECRET_KEY` |
 | `CORS_ORIGIN` | Origin allowed for browser requests | `https://your-domain.com` |
-| `PORT` | Runtime port (container/VM) | `3001` |
+| `PORT` | Runtime port (container/VM). Leave blank on Render so the platform can inject the assigned port. | `3001` |
 | `COOKIE_AUTH` (optional) | Enable HttpOnly cookie mode | `true` |
 | `COOKIE_SECURE` (optional) | Force secure flag (true in prod) | `true` |
 | `COOKIE_SAMESITE` (optional) | Cookie SameSite value | `Strict` |
@@ -75,7 +75,19 @@ Deploy pulled image similarly on VPS / platform.
 | Start Command | `npm run start:prod` |
 | Node Version | 20.x (matches Dockerfile) |
 
-Add all environment variables in dashboard. Ensure `COOKIE_AUTH=true` and set a strong `JWT_SECRET` & `INTERNAL_API_KEY`.
+Add all environment variables in dashboard, pointing origins to `https://cake-n-crush.onrender.com`. Ensure `COOKIE_AUTH=true`, `VERBOSE_AUTH_LOGS=false`, and set a strong `JWT_SECRET` & `INTERNAL_API_KEY` (the handshake only works when that key is present).
+
+### Local Development Quickstart
+For local dev, prefer `.env.example.local` (copy to `.env`). Key points:
+- `CORS_ORIGIN=http://localhost:5173`
+- `VITE_ADMIN_API_ENDPOINT=http://localhost:3001/api/auth`
+- `COOKIE_SECURE=false` (no TLS locally)
+- `COOKIE_DOMAIN=` (blank)
+- If port 3001 is busy, set `PORT=3002`
+
+Dev-only fallbacks in unified server:
+- When `NODE_ENV !== 'production'` and `INTERNAL_API_KEY` is missing, an ephemeral handshake key is generated.
+- When `NODE_ENV !== 'production'` and `ADMIN_PASSWORD` is missing, a DEV fallback password `admin` is used (warning logged). These never apply in production.
 
 ### Health Check
 Configure a health check URL: `/health` returns JSON `{ status: 'ok' }`.

@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const cookieParser = require('cookie-parser');
+const crypto = require('crypto');
 require('dotenv').config();
 
 const app = express();
@@ -101,12 +102,17 @@ const attemptGate = (req,res,next)=>{
   next();
 };
 
-// Hash password once at startup
+// Hash password once at startup (dev-friendly fallback when not production)
 let hashedPassword;
 try {
   if (process.env.ADMIN_PASSWORD) {
     hashedPassword = bcrypt.hashSync(process.env.ADMIN_PASSWORD, 12);
     console.log('🔐 Admin password hashed');
+  } else if (!isProd) {
+    // Developer convenience: only for local/dev when password is not provided
+    const devPassword = 'admin';
+    hashedPassword = bcrypt.hashSync(devPassword, 12);
+    console.warn('⚠️ ADMIN_PASSWORD missing - using DEV fallback password "admin" (DO NOT use in production)');
   } else {
     console.error('❌ ADMIN_PASSWORD missing');
   }
@@ -114,7 +120,12 @@ try {
   console.error('❌ Password hash failed:', e);
 }
 
-const internalApiKey = process.env.INTERNAL_API_KEY;
+// Internal API key for handshake (dev-friendly fallback when not production)
+let internalApiKey = process.env.INTERNAL_API_KEY;
+if (!internalApiKey && !isProd) {
+  internalApiKey = crypto.randomBytes(32).toString('hex');
+  console.warn('⚠️ INTERNAL_API_KEY missing - generated ephemeral DEV key (handshake enabled for local/test). Set INTERNAL_API_KEY for production.');
+}
 if (internalApiKey) console.log('🔑 Internal API key loaded'); else console.warn('⚠️ INTERNAL_API_KEY missing');
 
 // Handshake endpoint (short-lived) with rate limiter
