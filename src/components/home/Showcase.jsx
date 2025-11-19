@@ -7,7 +7,7 @@ import { playSwipeSound, playCardFlipSound } from '../../utils/soundEffects'
 gsap.registerPlugin(ScrollTrigger)
 
 // Memoized card component for performance
-const ShowcaseCard = memo(({ item, isFocused, index, total }) => {
+const ShowcaseCard = memo(({ item, index, total }) => {
   const [imageLoaded, setImageLoaded] = useState(false)
   const imgRef = useRef(null)
 
@@ -35,17 +35,10 @@ const ShowcaseCard = memo(({ item, isFocused, index, total }) => {
 
   return (
     <div 
-      className="rounded-lg overflow-hidden border bg-white/70 dark:bg-neutral-900/60 backdrop-blur md:min-w-[260px] min-w-full sm:min-w-[260px] transition-all duration-300"
+      className="rounded-xl overflow-hidden border-2 border-white/40 shadow-2xl bg-white/70 dark:bg-neutral-900/60 backdrop-blur"
       style={{
-        flex: 'auto',
         cursor: 'pointer',
         willChange: 'transform, filter',
-        // Mobile swipe card styling
-        ...(typeof isFocused !== 'undefined' && {
-          opacity: isFocused ? 1 : 0.6,
-          transform: isFocused ? 'scale(1)' : 'scale(0.85)',
-          filter: isFocused ? 'blur(0px)' : 'blur(8px)',
-        }),
       }}
     >
       <div 
@@ -65,21 +58,20 @@ const ShowcaseCard = memo(({ item, isFocused, index, total }) => {
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-purple-200 to-pink-200 dark:from-purple-900 dark:to-pink-900 flex items-center justify-center">
-            <span className="text-3xl opacity-50">🍰</span>
+            <span className="text-5xl opacity-50">🍰</span>
           </div>
         )}
       </div>
       
-      <div className="p-2 sm:p-3 text-xs sm:text-sm">
-        <div className="font-semibold truncate text-gray-900 dark:text-white">{item.name}</div>
-        <div className="text-neutral-600 dark:text-neutral-400 line-clamp-1">{index + 1} of {total}</div>
+      <div className="p-3 sm:p-4 text-center bg-gradient-to-t from-black/30 to-transparent">
+        <div className="font-semibold text-white text-sm sm:text-base truncate">{item.name}</div>
+        <div className="text-white/80 text-xs sm:text-sm mt-1">{index + 1} of {total}</div>
       </div>
     </div>
   )
 })
 
 ShowcaseCard.displayName = 'ShowcaseCard'
-
 export default function Showcase(){
   const { items } = usePortfolio()
   const ref = useRef(null)
@@ -87,6 +79,8 @@ export default function Showcase(){
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
   const [focusedCardIndex, setFocusedCardIndex] = useState(0)
   const [touchStart, setTouchStart] = useState(0)
+  const audioContextRef = useRef(null)
+  let lastSwipeTime = useRef(0)
 
   // Memoize list to avoid re-renders
   const list = useMemo(() => 
@@ -109,6 +103,42 @@ export default function Showcase(){
       window.removeEventListener('resize', handleResize)
     }
   }, [])
+
+  // Initialize audio context for sound
+  const initAudioContext = useCallback(() => {
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)()
+    }
+    return audioContextRef.current
+  }, [])
+
+  // Play swipe sound with better audio
+  const playSwipeSoundEffect = useCallback(() => {
+    try {
+      const ctx = initAudioContext()
+      const now = ctx.currentTime
+      
+      // Create oscillator for swipe sound
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      
+      // Frequency sweep (whoosh effect)
+      osc.frequency.setValueAtTime(600, now)
+      osc.frequency.exponentialRampToValueAtTime(200, now + 0.15)
+      
+      // Volume envelope
+      gain.gain.setValueAtTime(0.4, now)
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15)
+      
+      osc.start(now)
+      osc.stop(now + 0.15)
+    } catch (e) {
+      console.log('Audio unavailable')
+    }
+  }, [initAudioContext])
 
   // Desktop horizontal scroll animation with sound
   useEffect(() => {
@@ -151,16 +181,16 @@ export default function Showcase(){
             // Play scroll sound every 20% of scroll
             const progress = Math.floor(self.progress * 5) / 5
             if (progress > 0 && progress % 0.2 === 0) {
-              playSwipeSound()
+              playSwipeSoundEffect()
             }
           }
         }
       })
     }, root)
     return () => ctx.revert()
-  }, [isMobile])
+  }, [isMobile, playSwipeSoundEffect])
 
-  // Mobile swipe handlers
+  // Mobile swipe handlers with throttling
   const handleTouchStart = useCallback((e) => {
     if (!isMobile) return
     setTouchStart(e.touches[0].clientX)
@@ -168,23 +198,28 @@ export default function Showcase(){
 
   const handleTouchEnd = useCallback((e) => {
     if (!isMobile) return
+    
+    const now = Date.now()
+    if (now - lastSwipeTime.current < 300) return // Throttle swipes
+    lastSwipeTime.current = now
+
     const touchEnd = e.changedTouches[0].clientX
     const diff = touchStart - touchEnd
-    const threshold = 50
+    const threshold = 40
 
     if (Math.abs(diff) < threshold) return
 
     // Swipe left: show next card
     if (diff > threshold && focusedCardIndex < list.length - 1) {
       setFocusedCardIndex(focusedCardIndex + 1)
-      playCardFlipSound()
+      playSwipeSoundEffect()
     }
     // Swipe right: show previous card
     else if (diff < -threshold && focusedCardIndex > 0) {
       setFocusedCardIndex(focusedCardIndex - 1)
-      playCardFlipSound()
+      playSwipeSoundEffect()
     }
-  }, [isMobile, focusedCardIndex, list.length, touchStart])
+  }, [isMobile, focusedCardIndex, list.length, touchStart, playSwipeSoundEffect])
 
   return (
     <section 
@@ -195,71 +230,71 @@ export default function Showcase(){
         <h3 className="font-display text-gradient text-xl sm:text-2xl md:text-3xl">Signature Showcase</h3>
         <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-300 mt-2">
           {isMobile 
-            ? `👆 Swipe to browse • Card ${focusedCardIndex + 1} of ${list.length} ♪` 
+            ? `👆 Swipe to browse • Card ${focusedCardIndex + 1}/${list.length} ♪` 
             : '📜 Scroll to explore • Sound enabled ♪'}
         </p>
       </div>
       
       {isMobile ? (
-        // MOBILE: Swipe-focused card view with blur background and sound
+        // MOBILE: 3D Stacked card swipe effect (like reference image)
         <div 
-          className="relative w-full flex-1 flex items-center justify-center py-8 px-4 sm:px-6 perspective"
+          className="relative w-full flex-1 flex items-center justify-center py-8 px-4 sm:px-6"
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
+          style={{
+            perspective: '1200px',
+            background: 'radial-gradient(ellipse at center, rgba(0,0,0,0) 0%, rgba(0,0,0,0.3) 100%)',
+          }}
         >
-          {/* Background blur effect with stacked cards */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            {/* Far back cards (most blurred) */}
-            {list.slice(Math.max(0, focusedCardIndex - 2), focusedCardIndex).map((item, idx) => (
-              <div
-                key={`bg-${item.id}`}
-                className="absolute rounded-lg overflow-hidden border bg-white/30 dark:bg-neutral-900/30 backdrop-blur-xl"
-                style={{
-                  width: '85%',
-                  maxWidth: '300px',
-                  aspectRatio: '4/5',
-                  transform: `translateY(${(idx - 1) * 20}px)`,
-                  opacity: 0.4,
-                  filter: 'blur(12px)',
-                  zIndex: 1 + idx,
-                }}
-              >
-                {item.images?.[0] && (
-                  <img src={item.images[0]} alt={item.name} className="w-full h-full object-cover opacity-50" />
-                )}
-              </div>
-            ))}
+          {/* 3D Stacked cards container */}
+          <div 
+            className="relative w-full max-w-sm h-96"
+            style={{
+              transformStyle: 'preserve-3d',
+            }}
+          >
+            {/* Render all cards in a stack, with progressive transformations */}
+            {list.map((item, idx) => {
+              const positionFromFront = idx - focusedCardIndex
+              
+              // Only show cards within reasonable distance
+              if (positionFromFront < -1 || positionFromFront > 3) return null
+              
+              // Calculate scale and position for 3D effect
+              const scale = Math.max(0.7, 1 - Math.abs(positionFromFront) * 0.08)
+              const yOffset = positionFromFront * 16
+              const zOffset = positionFromFront * -40
+              const blur = Math.max(0, Math.abs(positionFromFront) * 4)
+              const opacity = positionFromFront === 0 ? 1 : 0.6
+              
+              return (
+                <div
+                  key={item.id}
+                  className="absolute inset-0 w-full h-full"
+                  style={{
+                    transform: `translateY(${yOffset}px) translateZ(${zOffset}px) scale(${scale})`,
+                    transition: positionFromFront === 0 || positionFromFront === 1 || positionFromFront === -1 
+                      ? 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)' 
+                      : 'none',
+                    transformStyle: 'preserve-3d',
+                    filter: blur > 0 ? `blur(${blur}px)` : 'none',
+                    opacity: opacity,
+                    pointerEvents: positionFromFront === 0 ? 'auto' : 'none',
+                  }}
+                >
+                  <ShowcaseCard 
+                    item={item}
+                    index={idx}
+                    total={list.length}
+                  />
+                </div>
+              )
+            })}
           </div>
 
-          {/* Focused card (front) */}
-          <div className="relative z-50 w-full max-w-xs">
-            {list[focusedCardIndex] && (
-              <ShowcaseCard 
-                item={list[focusedCardIndex]} 
-                isFocused={true}
-                index={focusedCardIndex}
-                total={list.length}
-              />
-            )}
-          </div>
-
-          {/* Navigation dots */}
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-30">
-            {list.map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => {
-                  setFocusedCardIndex(idx)
-                  playCardFlipSound()
-                }}
-                className={`w-2 h-2 rounded-full transition-all ${
-                  idx === focusedCardIndex 
-                    ? 'bg-white w-6' 
-                    : 'bg-white/50 hover:bg-white/75'
-                }`}
-                aria-label={`Go to card ${idx + 1}`}
-              />
-            ))}
+          {/* Swipe instructions */}
+          <div className="absolute top-4 left-4 right-4 text-xs text-white/60 pointer-events-none text-center">
+            ← Swipe to explore →
           </div>
         </div>
       ) : (
@@ -275,9 +310,9 @@ export default function Showcase(){
               display: 'flex',
             }}
           >
-            {list.map((it) => (
+            {list.map((it, idx) => (
               <div key={it.id} className="sc-card">
-                <ShowcaseCard item={it} />
+                <ShowcaseCard item={it} index={idx} total={list.length} />
               </div>
             ))}
           </div>
@@ -287,7 +322,7 @@ export default function Showcase(){
       {/* Mobile hint footer */}
       {isMobile && (
         <div className="px-4 sm:px-6 py-3 bg-white/50 dark:bg-black/30 text-center text-xs text-neutral-600 dark:text-neutral-300 border-t">
-          💡 Swipe left/right to browse • Dots to jump
+          👆 Swipe smoothly for best effect
         </div>
       )}
     </section>
