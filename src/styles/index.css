@@ -22,6 +22,16 @@ html, body {
     -webkit-transform: translate3d(0, 0, 0);
     transform: translate3d(0, 0, 0);
   }
+  
+  /* Disable expensive animations on Android */
+  * {
+    animation-duration: 0.2s !important;
+  }
+  
+  /* Simplify transitions on mobile */
+  .transition, .transition-all, .transition-transform, .transition-opacity {
+    transition-duration: 0.2s !important;
+  }
 }
 
 .glass {

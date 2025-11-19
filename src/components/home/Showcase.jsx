@@ -87,10 +87,13 @@ export default function Showcase(){
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
   const [focusedCardIndex, setFocusedCardIndex] = useState(0)
   const [touchStart, setTouchStart] = useState(0)
+  const [touchStartY, setTouchStartY] = useState(0)
   const [isAnimating, setIsAnimating] = useState(false)
   const audioContextRef = useRef(null)
   const lastSwipeTime = useRef(0)
   const containerRef = useRef(null)
+  const velocityRef = useRef(0)
+  const lastTimeRef = useRef(0)
 
   // Memoize list to avoid re-renders
   const list = useMemo(() => 
@@ -117,7 +120,11 @@ export default function Showcase(){
   // Initialize audio context for sound
   const initAudioContext = useCallback(() => {
     if (!audioContextRef.current) {
-      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)()
+      try {
+        audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)()
+      } catch (e) {
+        return null
+      }
     }
     return audioContextRef.current
   }, [])
@@ -126,6 +133,8 @@ export default function Showcase(){
   const playSwipeSoundEffect = useCallback(() => {
     try {
       const ctx = initAudioContext()
+      if (!ctx) return
+      
       if (ctx.state === 'suspended') {
         ctx.resume().catch(() => {})
       }
@@ -137,16 +146,16 @@ export default function Showcase(){
       osc.connect(gain)
       gain.connect(ctx.destination)
       
-      osc.frequency.setValueAtTime(600, now)
-      osc.frequency.exponentialRampToValueAtTime(200, now + 0.12)
+      osc.frequency.setValueAtTime(500, now)
+      osc.frequency.exponentialRampToValueAtTime(150, now + 0.1)
       
-      gain.gain.setValueAtTime(0.3, now)
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12)
+      gain.gain.setValueAtTime(0.2, now)
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1)
       
       osc.start(now)
-      osc.stop(now + 0.12)
+      osc.stop(now + 0.1)
     } catch (e) {
-      console.log('Audio unavailable')
+      // Silent fail
     }
   }, [initAudioContext])
 
@@ -199,26 +208,41 @@ export default function Showcase(){
     return () => ctx.revert()
   }, [isMobile, playSwipeSoundEffect])
 
-  // Mobile swipe handlers with better touch detection
+  // Mobile swipe handlers with velocity detection for smoother Android experience
   const handleTouchStart = useCallback((e) => {
     if (!isMobile || isAnimating) return
-    setTouchStart(e.touches[0].clientX)
+    
+    const touch = e.touches[0]
+    setTouchStart(touch.clientX)
+    setTouchStartY(touch.clientY)
+    lastTimeRef.current = Date.now()
+    velocityRef.current = 0
   }, [isMobile, isAnimating])
 
   const handleTouchEnd = useCallback((e) => {
     if (!isMobile || isAnimating) return
     
     const now = Date.now()
-    if (now - lastSwipeTime.current < 400) return // Increase throttle to 400ms for Android
+    if (now - lastSwipeTime.current < 350) return // Reduced throttle for faster feedback
     lastSwipeTime.current = now
 
     const touchEnd = e.changedTouches[0].clientX
+    const touchEndY = e.changedTouches[0].clientY
     const diff = touchStart - touchEnd
-    const threshold = 35 // Lower threshold for better responsiveness
-
+    const diffY = Math.abs(touchEndY - touchStartY)
+    
+    // Must be mostly horizontal swipe
+    if (diffY > Math.abs(diff)) return
+    
+    const threshold = 30 // Even lower threshold for sensitivity
+    
     if (Math.abs(diff) < threshold) return
 
     setIsAnimating(true)
+    
+    // Calculate velocity for natural swipe feel
+    const timeDiff = Math.max(1, now - lastTimeRef.current)
+    velocityRef.current = Math.abs(diff) / timeDiff
     
     // Swipe left: show next card
     if (diff > threshold && focusedCardIndex < list.length - 1) {
@@ -231,9 +255,9 @@ export default function Showcase(){
       playSwipeSoundEffect()
     }
     
-    // Reset animation flag after animation completes
-    setTimeout(() => setIsAnimating(false), 500)
-  }, [isMobile, focusedCardIndex, list.length, touchStart, playSwipeSoundEffect, isAnimating])
+    // Reset animation flag faster on Android
+    setTimeout(() => setIsAnimating(false), 350)
+  }, [isMobile, focusedCardIndex, list.length, touchStart, touchStartY, playSwipeSoundEffect, isAnimating])
 
   return (
     <section 
@@ -297,13 +321,15 @@ export default function Showcase(){
                     style={{
                       transform: `translateY(${yOffset}px) translateZ(${zOffset}px) scale(${scale})`,
                       transition: !isAnimating && (positionFromFront === 0 || positionFromFront === 1 || positionFromFront === -1)
-                        ? 'transform 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+                        ? 'transform 0.3s linear' // Use linear easing for Android smoothness
                         : 'none',
                       transformStyle: 'preserve-3d',
                       filter: blur > 0 ? `blur(${blur}px)` : 'none',
                       opacity: opacity,
                       pointerEvents: positionFromFront === 0 ? 'auto' : 'none',
                       WebkitFontSmoothing: 'antialiased',
+                      backfaceVisibility: 'hidden',
+                      WebkitBackfaceVisibility: 'hidden',
                     }}
                   >
                     <ShowcaseCard 
