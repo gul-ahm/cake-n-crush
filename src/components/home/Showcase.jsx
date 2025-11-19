@@ -260,12 +260,12 @@ export default function Showcase(){
               // Only show cards within reasonable distance
               if (positionFromFront < -1 || positionFromFront > 3) return null
               
-              // Calculate scale and position for 3D effect
-              const scale = Math.max(0.7, 1 - Math.abs(positionFromFront) * 0.08)
-              const yOffset = positionFromFront * 16
-              const zOffset = positionFromFront * -40
-              const blur = Math.max(0, Math.abs(positionFromFront) * 4)
-              const opacity = positionFromFront === 0 ? 1 : 0.6
+              // REVERSE: Front card is SMALL, back cards are BIG and BLURRED
+              const scale = 1 + Math.abs(positionFromFront) * 0.12 // 1.0, 1.12, 1.24, 1.36
+              const yOffset = -positionFromFront * 20 // Offset changes
+              const zOffset = positionFromFront * 60 // Push back cards further
+              const blur = Math.max(0, Math.abs(positionFromFront) * 5) // More blur
+              const opacity = positionFromFront === 0 ? 1 : 0.7
               
               return (
                 <div
