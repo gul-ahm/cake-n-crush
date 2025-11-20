@@ -162,9 +162,13 @@ class SecureAuthService {
     try {
       const token = sessionStorage.getItem(this.tokenKey);
       const body = token ? JSON.stringify({ token }) : JSON.stringify({});
+      const headers = { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
       const response = await fetch(`${this.apiEndpoint}/verify`, {
         method: 'POST',
-        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json' },
+        headers,
         credentials: 'include',
         body
       });

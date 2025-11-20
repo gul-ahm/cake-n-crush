@@ -47,7 +47,7 @@ app.use(cors({
   origin: allowedOrigin,
   credentials: true,
   methods: ['GET','POST','OPTIONS'],
-  allowedHeaders: ['Content-Type','X-Requested-With']
+  allowedHeaders: ['Content-Type','X-Requested-With','Authorization']
 }));
 app.use(express.json({ limit: '50kb' }));
 app.use(cookieParser());
@@ -255,8 +255,17 @@ app.post('/api/auth/login', loginLimiter, attemptGate, async (req, res) => {
 
 // Token verify (cookie based)
 app.post('/api/auth/verify', (req, res) => {
-  const token = req.cookies.auth_token;
-  if (!token) return res.status(401).json({ success: false, message: 'No token cookie' });
+  // Prefer HttpOnly cookie, then Authorization header, then body token (fallback)
+  let token = req.cookies.auth_token;
+  if (!token && req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+    token = req.headers.authorization.substring('Bearer '.length).trim();
+    if (verboseAuth) console.log('🔎 Using Authorization bearer token for verify');
+  }
+  if (!token && req.body && req.body.token) {
+    token = req.body.token;
+    if (verboseAuth) console.log('🔎 Using body token for verify (fallback)');
+  }
+  if (!token) return res.status(401).json({ success: false, message: 'No token provided' });
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     if (verboseAuth) console.log('✅ Token verified for user:', decoded.user);
