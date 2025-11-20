@@ -61,7 +61,19 @@ app.use(helmet({
 // Custom Content Security Policy (env override possible)
 const defaultCsp = process.env.CONTENT_SECURITY_POLICY || "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' " + allowedOrigin + "; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'";
 app.use((req,res,next)=>{
-  res.setHeader('Content-Security-Policy', defaultCsp);
+  // Extend CSP for Google Fonts if not already present
+  let effectiveCsp = defaultCsp;
+  if (!/fonts\.googleapis\.com/.test(effectiveCsp)) {
+    effectiveCsp = effectiveCsp.replace(/style-src 'self' 'unsafe-inline';/,
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;"
+    );
+  }
+  if (!/fonts\.gstatic\.com/.test(effectiveCsp)) {
+    effectiveCsp = effectiveCsp.replace(/font-src 'self' data:;/,
+      "font-src 'self' data: https://fonts.gstatic.com;"
+    );
+  }
+  res.setHeader('Content-Security-Policy', effectiveCsp);
   next();
 });
 
@@ -228,9 +240,13 @@ app.post('/api/auth/login', loginLimiter, attemptGate, async (req, res) => {
       maxAge: 3600000,
       path: '/'
     });
+    if (verboseAuth) {
+      console.log('🍪 Set-Cookie auth_token issued (httpOnly)');
+    }
     authAttempts.delete(req.ip);
     if (verboseAuth) console.log(`Successful login for user: ${username}`);
-    res.json({ success: true, message: 'Authentication successful', expiresIn: 3600000 });
+    // Include token for fallback (client stores only if needed)
+    res.json({ success: true, message: 'Authentication successful', expiresIn: 3600000, token });
   } catch (e) {
     if (verboseAuth) console.error('Auth error:', e);
     res.status(500).json({ success: false, message: 'Internal error' });
@@ -243,8 +259,10 @@ app.post('/api/auth/verify', (req, res) => {
   if (!token) return res.status(401).json({ success: false, message: 'No token cookie' });
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (verboseAuth) console.log('✅ Token verified for user:', decoded.user);
     res.json({ success: true, user: decoded.user, role: decoded.role, message: 'Token valid' });
   } catch (e) {
+    if (verboseAuth) console.warn('❌ Token verification failed:', e.message);
     return res.status(401).json({ success: false, message: 'Invalid token' });
   }
 });
