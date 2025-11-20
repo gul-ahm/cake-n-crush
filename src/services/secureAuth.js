@@ -18,6 +18,13 @@ class SecureAuthService {
       VITE_API_KEY: import.meta.env.VITE_API_KEY ? 'Set' : 'Missing',
       VITE_ACCESS_ROUTE: import.meta.env.VITE_ACCESS_ROUTE
     });
+    
+    // CRITICAL: Validate endpoint is not undefined (cache-busting check)
+    if (this.apiEndpoint === 'undefined' || !this.apiEndpoint) {
+      console.error('🚨 CRITICAL: API endpoint is undefined! Using emergency fallback.');
+      this.apiEndpoint = '/api/auth';
+      console.log('🔧 Emergency fallback set to:', this.apiEndpoint);
+    }
   }
 
   // Encrypt sensitive data before storing
@@ -47,17 +54,20 @@ class SecureAuthService {
     // Retry logic (3 attempts) for transient failures
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
-        console.log(`🤝 Requesting handshake token (attempt ${attempt})...`);
+        console.log(`🤝 Requesting handshake token (attempt ${attempt}) from: ${this.apiEndpoint}/handshake`);
         const res = await fetch(`${this.apiEndpoint}/handshake`, {
           method: 'GET',
           headers: { 'X-Requested-With': 'XMLHttpRequest' },
-          credentials: 'include'
+          credentials: 'include',
+          cache: 'no-cache' // Force fresh request, bypass cache
         });
+        console.log('🤝 Handshake response status:', res.status);
         const data = await res.json();
+        console.log('🤝 Handshake response data:', data);
         if (data.success) {
           this.handshakeToken = data.handshake;
           this.handshakeExpiry = Date.now() + data.expiresIn;
-          console.log('✅ Handshake acquired');
+          console.log('✅ Handshake acquired successfully');
           return this.handshakeToken;
         } else {
           console.error('Handshake failed:', data.message);
