@@ -25,6 +25,17 @@ class SecureAuthService {
       this.apiEndpoint = '/api/auth';
       console.log('🔧 Emergency fallback set to:', this.apiEndpoint);
     }
+
+    // If running on a non-localhost host (e.g., onrender.com) but endpoint still points to localhost,
+    // override to same-origin relative path to satisfy CSP and avoid cross-origin issues.
+    try {
+      const host = typeof window !== 'undefined' ? window.location.hostname : '';
+      const isLocalHost = /^(localhost|127\.0\.0\.1)$/i.test(host);
+      if (!isLocalHost && /^http:\/\/localhost(:\d+)?\//i.test(this.apiEndpoint)) {
+        console.warn('⚠️ Detected localhost API endpoint on production host. Overriding to /api/auth');
+        this.apiEndpoint = '/api/auth';
+      }
+    } catch {}
   }
 
   // Encrypt sensitive data before storing
