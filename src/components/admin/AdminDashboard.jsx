@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useMemo, useDeferredValue, Suspense, lazy } from 'react'
 import usePortfolio from '../../hooks/usePortfolio'
+import useMobilePerfMode from '../../hooks/useMobilePerfMode'
 import { list as listActivity, countByType } from '../../services/activityService'
 import ImageUpload from './ImageUpload'
 import PortfolioGrid from './PortfolioGrid'
@@ -9,16 +10,18 @@ import FindUsManager from './FindUsManager'
 import SocialMediaManager from './SocialMediaManager'
 
 export default function AdminDashboard(){
+  const perfMode = useMobilePerfMode()
   const { items, add, update, remove, reorder, categories } = usePortfolio()
+  const deferredItems = useDeferredValue(items)
   const [showUpload, setShowUpload] = useState(false)
   const [activeTab, setActiveTab] = useState('portfolio')
   const activity = listActivity(10)
 
-  const stats = {
-    total: items.length,
-    views: items.reduce((a,b)=>a+(b.views||0),0),
-    orders: countByType('order_click'),
-  }
+  const stats = useMemo(() => ({
+    total: deferredItems.length,
+    views: deferredItems.reduce((a,b)=>a+(b.views||0),0),
+    orders: countByType('order_click')
+  }), [deferredItems])
 
   const tabs = [
     { id: 'portfolio', label: 'Portfolio', icon: '🖼️' },
@@ -58,33 +61,34 @@ export default function AdminDashboard(){
       </div>
 
       {/* Tab Content */}
-      <div className="bg-white/80 dark:bg-black/20 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
-        {activeTab === 'portfolio' && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Portfolio Management</h2>
-              <button
-                onClick={() => setShowUpload(true)}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all duration-200 flex items-center space-x-2"
-              >
-                <span>✨</span>
-                <span>Add New Cake</span>
-              </button>
+      <div className={`rounded-2xl border border-white/20 p-6 ${perfMode ? 'bg-white dark:bg-gray-900' : 'bg-white/80 dark:bg-black/20 backdrop-blur-xl'}`}>        
+        <Suspense fallback={<div className="py-12 text-center text-sm text-gray-500">Loading...</div>}>
+          {activeTab === 'portfolio' && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Portfolio Management</h2>
+                <button
+                  onClick={() => setShowUpload(true)}
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all duration-200 flex items-center space-x-2"
+                >
+                  <span>✨</span>
+                  <span>Add New Cake</span>
+                </button>
+              </div>
+              <PortfolioGrid items={deferredItems} onRemove={remove} onReorder={reorder} perfMode={perfMode} />
             </div>
-            <PortfolioGrid items={items} onRemove={remove} onReorder={reorder} />
-          </div>
-        )}
+          )}
 
-        {activeTab === 'showcase' && <ShowcaseManager />}
-        {activeTab === 'findus' && <FindUsManager />}
-        {activeTab === 'social' && <SocialMediaManager />}
-        
-        {activeTab === 'activity' && (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Recent Activity</h2>
-            <RecentActivity items={activity} />
-          </div>
-        )}
+          {activeTab === 'showcase' && <ShowcaseManager perfMode={perfMode} />}
+          {activeTab === 'findus' && <FindUsManager perfMode={perfMode} />}
+          {activeTab === 'social' && <SocialMediaManager perfMode={perfMode} />}
+          {activeTab === 'activity' && (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Recent Activity</h2>
+              <RecentActivity items={activity} perfMode={perfMode} />
+            </div>
+          )}
+        </Suspense>
       </div>
 
       {/* Upload Modal */}
@@ -96,6 +100,7 @@ export default function AdminDashboard(){
             await add(entry)
             setShowUpload(false)
           }}
+          perfMode={perfMode}
         />
       )}
     </div>

@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 
-export default function FindUsManager() {
+export default function FindUsManager({ perfMode }) {
   const [findUsData, setFindUsData] = useState({
     location: {
       name: 'Cake N Crush',
@@ -17,95 +17,95 @@ export default function FindUsManager() {
         thursday: '9:00 AM - 8:00 PM',
         friday: '9:00 AM - 10:00 PM',
         saturday: '8:00 AM - 10:00 PM',
-        sunday: '10:00 AM - 6:00 PM'
-      }
+        sunday: '10:00 AM - 6:00 PM',
+      },
     },
     mapSettings: {
       zoom: 15,
-      style: 'roadmap', // roadmap, satellite, hybrid, terrain
+      style: 'roadmap',
       showTraffic: false,
-      showTransit: false
+      showTransit: false,
     },
     customMapImage: '',
-    description: 'Visit our cozy bakery for the finest custom cakes and delightful treats!'
-  })
+    description: 'Visit our cozy bakery for the finest custom cakes and delightful treats!',
+  });
 
   useEffect(() => {
-    // Load find us data from localStorage
-    const stored = localStorage.getItem('findus_data')
+    const stored = localStorage.getItem('findus_data');
     if (stored) {
-      setFindUsData({ ...findUsData, ...JSON.parse(stored) })
+      setFindUsData((prev) => ({ ...prev, ...JSON.parse(stored) }));
     }
-  }, [])
+  }, []);
 
   const saveData = (data) => {
-    localStorage.setItem('findus_data', JSON.stringify(data))
-    setFindUsData(data)
-  }
+    localStorage.setItem('findus_data', JSON.stringify(data));
+    setFindUsData(data);
+  };
 
   const handleLocationChange = (field, value) => {
-    const newData = {
+    saveData({
       ...findUsData,
-      location: { ...findUsData.location, [field]: value }
-    }
-    saveData(newData)
-  }
+      location: { ...findUsData.location, [field]: value },
+    });
+  };
 
   const handleHoursChange = (day, value) => {
-    const newData = {
+    saveData({
       ...findUsData,
       location: {
         ...findUsData.location,
-        hours: { ...findUsData.location.hours, [day]: value }
-      }
-    }
-    saveData(newData)
-  }
+        hours: { ...findUsData.location.hours, [day]: value },
+      },
+    });
+  };
 
   const handleMapSettingsChange = (field, value) => {
-    const newData = {
+    saveData({
       ...findUsData,
-      mapSettings: { ...findUsData.mapSettings, [field]: value }
-    }
-    saveData(newData)
-  }
+      mapSettings: { ...findUsData.mapSettings, [field]: value },
+    });
+  };
 
   const handleImageUpload = (e) => {
-    const file = e.target.files[0]
-    if (!file) return
+    const file = e.target.files[0];
+    if (!file) return;
 
-    const reader = new FileReader()
+    const reader = new FileReader();
     reader.onload = (event) => {
-      const newData = { ...findUsData, customMapImage: event.target.result }
-      saveData(newData)
-    }
-    reader.readAsDataURL(file)
-  }
+      saveData({ ...findUsData, customMapImage: event.target.result });
+    };
+    reader.readAsDataURL(file);
+  };
 
   const generateGoogleMapsUrl = () => {
-    const { lat, lng } = findUsData.location
-    const { zoom, style } = findUsData.mapSettings
-    return `https://www.google.com/maps/embed/v1/place?key=YOUR_API_KEY&q=${lat},${lng}&zoom=${zoom}&maptype=${style}`
-  }
+    const { lat, lng } = findUsData.location;
+    const { zoom, style } = findUsData.mapSettings;
+    return `https://www.google.com/maps/embed/v1/place?key=YOUR_API_KEY&q=${lat},${lng}&zoom=${zoom}&maptype=${style}`;
+  };
+
+  const Container = ({ children, motionProps, className }) => (
+    perfMode ? (
+      <div className={className}>{children}</div>
+    ) : (
+      <motion.div {...motionProps} className={className}>
+        {children}
+      </motion.div>
+    )
+  );
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Find Us Manager</h2>
-        <div className="text-sm text-gray-600 dark:text-gray-400">
-          Location & Contact Management
-        </div>
+        <div className="text-sm text-gray-600 dark:text-gray-400">Location & Contact Management</div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Location Information */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-700"
+        <Container
+          motionProps={{ initial: { opacity: 0, x: -20 }, animate: { opacity: 1, x: 0 } }}
+          className={`rounded-xl p-6 border border-gray-200 dark:border-gray-700 ${perfMode ? 'bg-white dark:bg-gray-800' : 'bg-white dark:bg-gray-800 shadow-lg'}`}
         >
           <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-white">📍 Location Details</h3>
-          
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Business Name</label>
@@ -116,7 +116,6 @@ export default function FindUsManager() {
                 className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
             </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Address</label>
               <textarea
@@ -126,7 +125,6 @@ export default function FindUsManager() {
                 className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
             </div>
-
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Latitude</label>
@@ -149,7 +147,6 @@ export default function FindUsManager() {
                 />
               </div>
             </div>
-
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Phone</label>
@@ -170,7 +167,6 @@ export default function FindUsManager() {
                 />
               </div>
             </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</label>
               <textarea
@@ -182,22 +178,17 @@ export default function FindUsManager() {
               />
             </div>
           </div>
-        </motion.div>
+        </Container>
 
-        {/* Business Hours */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-700"
+        <Container
+          motionProps={{ initial: { opacity: 0, x: 20 }, animate: { opacity: 1, x: 0 } }}
+          className={`rounded-xl p-6 border border-gray-200 dark:border-gray-700 ${perfMode ? 'bg-white dark:bg-gray-800' : 'bg-white dark:bg-gray-800 shadow-lg'}`}
         >
           <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-white">🕒 Business Hours</h3>
-          
           <div className="space-y-3">
             {Object.entries(findUsData.location.hours).map(([day, time]) => (
               <div key={day} className="flex items-center space-x-3">
-                <label className="w-24 text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">
-                  {day}:
-                </label>
+                <label className="w-24 text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">{day}:</label>
                 <input
                   type="text"
                   value={time}
@@ -206,18 +197,16 @@ export default function FindUsManager() {
                   placeholder="e.g., 9:00 AM - 8:00 PM"
                 />
               </div>
-            ))}\n          </div>
-        </motion.div>
+            ))}
+          </div>
+        </Container>
       </div>
 
-      {/* Map Settings */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-700"
+      <Container
+        motionProps={{ initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 } }}
+        className={`rounded-xl p-6 border border-gray-200 dark:border-gray-700 ${perfMode ? 'bg-white dark:bg-gray-800' : 'bg-white dark:bg-gray-800 shadow-lg'}`}
       >
         <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-white">🗺️ Map Configuration</h3>
-        
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Zoom Level</label>
@@ -231,7 +220,6 @@ export default function FindUsManager() {
             />
             <div className="text-center text-sm text-gray-500 mt-1">{findUsData.mapSettings.zoom}</div>
           </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Map Style</label>
             <select
@@ -245,7 +233,6 @@ export default function FindUsManager() {
               <option value="terrain">Terrain</option>
             </select>
           </div>
-
           <div className="space-y-2">
             <label className="flex items-center space-x-2">
               <input
@@ -267,12 +254,8 @@ export default function FindUsManager() {
             </label>
           </div>
         </div>
-
-        {/* Custom Map Image */}
         <div className="border-t pt-4">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Custom Map Image (Alternative to Google Maps)
-          </label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Custom Map Image (Alternative to Google Maps)</label>
           <div className="flex space-x-4">
             <input
               type="file"
@@ -306,8 +289,6 @@ export default function FindUsManager() {
             </div>
           )}
         </div>
-
-        {/* Map Preview */}
         <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
           <h4 className="font-medium text-gray-800 dark:text-white mb-2">Google Maps Embed URL:</h4>
           <code className="text-xs bg-white dark:bg-gray-800 p-2 rounded block overflow-x-auto text-gray-600 dark:text-gray-400">
@@ -317,7 +298,7 @@ export default function FindUsManager() {
             Note: You'll need a Google Maps API key for the map to work properly on the public site.
           </p>
         </div>
-      </motion.div>
+      </Container>
     </div>
-  )
+  );
 }

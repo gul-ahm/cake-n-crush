@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 
-export default function ShowcaseManager() {
+export default function ShowcaseManager({ perfMode }) {
   const [showcaseItems, setShowcaseItems] = useState([])
   const [newItem, setNewItem] = useState({ title: '', type: 'image', url: '', description: '' })
   const [isUploading, setIsUploading] = useState(false)
@@ -63,11 +63,155 @@ export default function ShowcaseManager() {
       </div>
 
       {/* Add New Item Form */}
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-6 rounded-xl border border-purple-200 dark:border-purple-800"
-      >
+      {perfMode ? (
+        <div className="p-6 rounded-xl border border-purple-200 dark:border-purple-800 bg-white dark:bg-gray-900">
+          <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-white">Add New Showcase Item</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Title</label>
+              <input
+                type="text"
+                value={newItem.title}
+                onChange={(e) => setNewItem(prev => ({ ...prev, title: e.target.value }))}
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                placeholder="Enter showcase title"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Type</label>
+              <select
+                value={newItem.type}
+                onChange={(e) => setNewItem(prev => ({ ...prev, type: e.target.value }))}
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                <option value="image">Image</option>
+                <option value="video">Video</option>
+                <option value="gif">GIF</option>
+              </select>
+            </div>
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</label>
+            <textarea
+              value={newItem.description}
+              onChange={(e) => setNewItem(prev => ({ ...prev, description: e.target.value }))}
+              rows={3}
+              className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              placeholder="Enter description"
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              {newItem.type === 'video' ? 'Video URL or Upload' : 'Image/File Upload'}
+            </label>
+            <div className="flex space-x-4">
+              <input
+                type="url"
+                value={newItem.url}
+                onChange={(e) => setNewItem(prev => ({ ...prev, url: e.target.value }))}
+                className="flex-1 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                placeholder="Enter URL or upload file below"
+              />
+              <input
+                type="file"
+                onChange={handleFileUpload}
+                accept={newItem.type === 'video' ? 'video/*' : 'image/*,video/*'}
+                className="hidden"
+                id="showcase-file"
+              />
+              <label
+                htmlFor="showcase-file"
+                className="px-4 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              >
+                📁 Upload
+              </label>
+            </div>
+          </div>
+          <button
+            onClick={handleAddItem}
+            disabled={isUploading || !newItem.title || !newItem.url}
+            className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg transition-all duration-200"
+          >
+            {isUploading ? '⏳ Adding...' : '✨ Add to Showcase'}
+          </button>
+        </div>
+      ) : (
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-6 rounded-xl border border-purple-200 dark:border-purple-800"
+        >
+          <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-white">Add New Showcase Item</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Title</label>
+              <input
+                type="text"
+                value={newItem.title}
+                onChange={(e) => setNewItem(prev => ({ ...prev, title: e.target.value }))}
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                placeholder="Enter showcase title"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Type</label>
+              <select
+                value={newItem.type}
+                onChange={(e) => setNewItem(prev => ({ ...prev, type: e.target.value }))}
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                <option value="image">Image</option>
+                <option value="video">Video</option>
+                <option value="gif">GIF</option>
+              </select>
+            </div>
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</label>
+            <textarea
+              value={newItem.description}
+              onChange={(e) => setNewItem(prev => ({ ...prev, description: e.target.value }))}
+              rows={3}
+              className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              placeholder="Enter description"
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              {newItem.type === 'video' ? 'Video URL or Upload' : 'Image/File Upload'}
+            </label>
+            <div className="flex space-x-4">
+              <input
+                type="url"
+                value={newItem.url}
+                onChange={(e) => setNewItem(prev => ({ ...prev, url: e.target.value }))}
+                className="flex-1 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                placeholder="Enter URL or upload file below"
+              />
+              <input
+                type="file"
+                onChange={handleFileUpload}
+                accept={newItem.type === 'video' ? 'video/*' : 'image/*,video/*'}
+                className="hidden"
+                id="showcase-file"
+              />
+              <label
+                htmlFor="showcase-file"
+                className="px-4 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              >
+                📁 Upload
+              </label>
+            </div>
+          </div>
+          <button
+            onClick={handleAddItem}
+            disabled={isUploading || !newItem.title || !newItem.url}
+            className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg transition-all duration-200"
+          >
+            {isUploading ? '⏳ Adding...' : '✨ Add to Showcase'}
+          </button>
+        </motion.div>
+      )}
         <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-white">Add New Showcase Item</h3>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -135,23 +279,14 @@ export default function ShowcaseManager() {
           </div>
         </div>
 
-        <button
-          onClick={handleAddItem}
-          disabled={isUploading || !newItem.title || !newItem.url}
-          className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg transition-all duration-200"
-        >
-          {isUploading ? '⏳ Adding...' : '✨ Add to Showcase'}
-        </button>
-      </motion.div>
+      
 
       {/* Current Showcase Items */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" style={perfMode ? { contain: 'content' } : undefined}>
         {showcaseItems.map((item) => (
-          <motion.div
+          <div
             key={item.id}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700"
+            className={`rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 ${perfMode ? 'bg-white dark:bg-gray-800' : 'bg-white dark:bg-gray-800 shadow-lg'} will-change-transform`}
           >
             <div className="aspect-video bg-gray-100 dark:bg-gray-900 relative">
               {item.type === 'video' ? (
@@ -165,6 +300,9 @@ export default function ShowcaseManager() {
                 <img
                   src={item.url}
                   alt={item.title}
+                  loading="lazy"
+                  decoding="async"
+                  fetchPriority="low"
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     e.target.src = '/placeholder-image.jpg'
@@ -193,7 +331,7 @@ export default function ShowcaseManager() {
                 </button>
               </div>
             </div>
-          </motion.div>
+          </div>
         ))}
       </div>
 
