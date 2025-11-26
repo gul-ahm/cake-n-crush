@@ -12,7 +12,7 @@ const ImageLightbox = memo(({ image, title, isOpen, onClose }) => {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md"
       onClick={onClose}
       style={{
         animation: 'fadeIn 0.3s ease-out',
@@ -24,13 +24,13 @@ const ImageLightbox = memo(({ image, title, isOpen, onClose }) => {
           to { opacity: 1; }
         }
         @keyframes scaleIn {
-          from { transform: scale(0.85); opacity: 0; }
+          from { transform: scale(0.9); opacity: 0; }
           to { transform: scale(1); opacity: 1; }
         }
       `}</style>
-      
+
       <div
-        className="relative max-w-4xl max-h-screen w-full mx-4"
+        className="relative max-w-[95vw] max-h-[95vh] flex flex-col items-center"
         onClick={(e) => e.stopPropagation()}
         style={{
           animation: 'scaleIn 0.3s ease-out',
@@ -39,28 +39,30 @@ const ImageLightbox = memo(({ image, title, isOpen, onClose }) => {
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute -top-10 right-0 z-10 text-white hover:text-gray-300 transition-colors"
+          className="absolute -top-12 right-0 md:-right-12 z-50 text-white/80 hover:text-white transition-colors p-2"
           aria-label="Close lightbox"
         >
-          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-8 h-8 md:w-10 md:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
 
         {/* Image container */}
-        <div className="bg-black rounded-lg overflow-hidden shadow-2xl">
+        <div className="relative rounded-lg overflow-hidden shadow-2xl">
           <img
             src={image}
             alt={title}
-            className="w-full h-auto max-h-screen object-contain"
+            className="max-w-[95vw] max-h-[85vh] object-contain"
             onClick={onClose}
           />
         </div>
 
         {/* Image title */}
-        <div className="mt-4 text-center text-white/90 text-lg font-semibold">
-          {title}
-        </div>
+        {title && (
+          <div className="mt-4 text-center text-white/90 text-lg md:text-xl font-medium tracking-wide">
+            {title}
+          </div>
+        )}
       </div>
     </div>
   )
@@ -68,41 +70,59 @@ const ImageLightbox = memo(({ image, title, isOpen, onClose }) => {
 
 ImageLightbox.displayName = 'ImageLightbox'
 
+import { getContent } from '../../services/contentService'
+
+// ... (keep imports)
+
+// ... (keep ImageLightbox)
+
 // Memoized card component for performance
 const ShowcaseCard = memo(({ item, index, total, onImageClick }) => {
   const [imageLoaded, setImageLoaded] = useState(false)
   const imgRef = useRef(null)
+  const videoRef = useRef(null)
 
-  // Use Intersection Observer for lazy image loading
+  // Use Intersection Observer for lazy image/video loading
   useEffect(() => {
-    if (!imgRef.current) return
-    
+    const target = item.type === 'video' ? videoRef.current : imgRef.current
+    if (!target) return
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          const img = entry.target
-          if (img.dataset.src) {
-            img.src = img.dataset.src
-            img.onload = () => setImageLoaded(true)
-            observer.unobserve(img)
+          if (item.type === 'video') {
+            const video = entry.target
+            if (video.dataset.src) {
+              video.src = video.dataset.src
+              video.load()
+              setImageLoaded(true)
+              observer.unobserve(video)
+            }
+          } else {
+            const img = entry.target
+            if (img.dataset.src) {
+              img.src = img.dataset.src
+              img.onload = () => setImageLoaded(true)
+              observer.unobserve(img)
+            }
           }
         }
       },
       { rootMargin: '50px' }
     )
-    
-    observer.observe(imgRef.current)
+
+    observer.observe(target)
     return () => observer.disconnect()
-  }, [])
+  }, [item.type])
 
   const handleImageClick = () => {
-    if (item.images?.[0]) {
-      onImageClick(item.images[0], item.name)
+    if (item.url) {
+      onImageClick(item.url, item.title)
     }
   }
 
   return (
-    <div 
+    <div
       className="rounded-xl overflow-hidden border-2 border-white/40 shadow-2xl bg-white/70 dark:bg-neutral-900/60 backdrop-blur h-full cursor-pointer transition-transform hover:scale-105"
       onClick={handleImageClick}
       style={{
@@ -111,28 +131,40 @@ const ShowcaseCard = memo(({ item, index, total, onImageClick }) => {
         backfaceVisibility: 'hidden',
       }}
     >
-      <div 
+      <div
         className="w-full h-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden flex items-center justify-center relative"
-        style={{ 
+        style={{
           contain: 'layout style paint',
           WebkitFontSmoothing: 'antialiased',
         }}
       >
-        {item.images?.[0] ? (
+        {item.url ? (
           <>
-            <img 
-              ref={imgRef}
-              data-src={item.images[0]}
-              alt={item.name}
-              decoding="async"
-              className={`w-full h-full object-cover transition-opacity duration-300 ${
-                imageLoaded ? 'opacity-100' : 'opacity-0'
-              }`}
-              style={{ 
-                willChange: imageLoaded ? 'auto' : 'opacity',
-                WebkitBackfaceVisibility: 'hidden',
-              }}
-            />
+            {item.type === 'video' ? (
+              <video
+                ref={videoRef}
+                data-src={item.url}
+                className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'
+                  }`}
+                muted
+                loop
+                playsInline
+                onLoadedData={() => setImageLoaded(true)}
+              />
+            ) : (
+              <img
+                ref={imgRef}
+                data-src={item.url}
+                alt={item.title}
+                decoding="async"
+                className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'
+                  }`}
+                style={{
+                  willChange: imageLoaded ? 'auto' : 'opacity',
+                  WebkitBackfaceVisibility: 'hidden',
+                }}
+              />
+            )}
             {/* Hover overlay */}
             <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition-colors flex items-center justify-center">
               <svg className="w-12 h-12 text-white opacity-0 hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -146,9 +178,9 @@ const ShowcaseCard = memo(({ item, index, total, onImageClick }) => {
           </div>
         )}
       </div>
-      
+
       <div className="p-3 sm:p-4 text-center bg-gradient-to-t from-black/30 to-transparent">
-        <div className="font-semibold text-white text-sm sm:text-base truncate">{item.name}</div>
+        <div className="font-semibold text-white text-sm sm:text-base truncate">{item.title}</div>
         <div className="text-white/80 text-xs sm:text-sm mt-1">{index + 1} of {total}</div>
       </div>
     </div>
@@ -157,8 +189,8 @@ const ShowcaseCard = memo(({ item, index, total, onImageClick }) => {
 
 ShowcaseCard.displayName = 'ShowcaseCard'
 
-export default function Showcase(){
-  const { items } = usePortfolio()
+export default function Showcase() {
+  const [items, setItems] = useState([])
   const ref = useRef(null)
   const scrollContainerRef = useRef(null)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
@@ -175,10 +207,26 @@ export default function Showcase(){
   const velocityRef = useRef(0)
   const lastTimeRef = useRef(0)
 
+  useEffect(() => {
+    const load = async () => {
+      const data = await getContent('showcase')
+      if (data && data.length > 0) {
+        setItems(data)
+      } else {
+        // Fallback placeholders if no data
+        setItems(Array.from({ length: 5 }).map((_, i) => ({
+          id: `ph-${i}`,
+          title: `Signature ${i + 1}`,
+          url: '',
+          type: 'image'
+        })))
+      }
+    }
+    load()
+  }, [])
+
   // Memoize list to avoid re-renders
-  const list = useMemo(() => 
-    items.length ? items : Array.from({ length: 8 }).map((_,i)=>({ id:`ph-${i}`, name:`Signature ${i+1}`, images:[] }))
-  , [items])
+  const list = useMemo(() => items, [items])
 
   // Handle image click to open lightbox
   const handleImageClick = useCallback((image, title) => {
@@ -200,13 +248,20 @@ export default function Showcase(){
         handleCloseLightbox()
       }
     }
-    
+
     if (lightboxOpen) {
-      window.addEventListener('keydown', handleEscape)
+      // Prevent layout shift by compensating for scrollbar width
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
+      document.body.style.paddingRight = `${scrollbarWidth}px`
       document.body.style.overflow = 'hidden'
+
+      window.addEventListener('keydown', handleEscape)
+
       return () => {
         window.removeEventListener('keydown', handleEscape)
-        document.body.style.overflow = 'unset'
+        // Restore styles
+        document.body.style.overflow = ''
+        document.body.style.paddingRight = ''
       }
     }
   }, [lightboxOpen, handleCloseLightbox])
@@ -245,24 +300,24 @@ export default function Showcase(){
     try {
       const ctx = initAudioContext()
       if (!ctx) return
-      
+
       if (ctx.state === 'suspended') {
-        ctx.resume().catch(() => {})
+        ctx.resume().catch(() => { })
       }
-      
+
       const now = ctx.currentTime
       const osc = ctx.createOscillator()
       const gain = ctx.createGain()
-      
+
       osc.connect(gain)
       gain.connect(ctx.destination)
-      
+
       osc.frequency.setValueAtTime(500, now)
       osc.frequency.exponentialRampToValueAtTime(150, now + 0.1)
-      
+
       gain.gain.setValueAtTime(0.2, now)
       gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1)
-      
+
       osc.start(now)
       osc.stop(now + 0.1)
     } catch (e) {
@@ -272,57 +327,65 @@ export default function Showcase(){
 
   // Desktop horizontal scroll animation with sound
   useEffect(() => {
-    if (isMobile) return
-    
+    if (isMobile || items.length === 0) return
+
     const root = ref.current
     if (!root) return
     const track = root.querySelector('.sc-track')
     if (!track) return
-    
-    const distance = Math.max(0, track.scrollWidth - root.clientWidth)
+
+    // Refresh ScrollTrigger to ensure correct calculations after data load
+    ScrollTrigger.refresh()
+
+    const distance = Math.max(0, track.scrollWidth - root.clientWidth + 100) // Add buffer
+
     const ctx = gsap.context(() => {
       const cards = root.querySelectorAll('.sc-card')
+
+      // Animate cards appearing BEFORE pinning
       gsap.from(cards, {
         opacity: 0,
-        y: 20,
-        scale: 0.95,
-        duration: 0.4,
-        stagger: 0.04,
-        ease: 'power1.out',
+        y: 30,
+        duration: 0.6,
+        stagger: 0.05,
+        ease: 'power2.out',
         scrollTrigger: {
           trigger: root,
-          start: 'center center',
-          toggleActions: 'restart pause reverse pause',
+          start: 'top 80%', // Start animation earlier
+          toggleActions: 'play none none reverse',
         }
       })
+
+      // Pin and scroll horizontally
       gsap.to(track, {
-        x: () => -distance,
+        x: -distance,
         ease: 'none',
         scrollTrigger: {
           trigger: root,
           start: 'center center',
-          end: () => `+=${Math.max(500, distance)}`,
-          scrub: 0.5,
+          end: () => `+=${distance}`, // Scroll distance matches track width
+          scrub: 0.8, // Smoother scrubbing
           pin: true,
           anticipatePin: 1,
-          pinSpacing: true,
-          fastScrollEnd: true,
+          invalidateOnRefresh: true, // Handle resizes better
           onUpdate: (self) => {
-            const progress = Math.floor(self.progress * 5) / 5
-            if (progress > 0 && progress % 0.2 === 0) {
+            // Play sound at intervals
+            const progress = Math.floor(self.progress * 8) / 8
+            if (progress > 0 && progress % 0.125 === 0) {
               playSwipeSoundEffect()
             }
           }
         }
       })
     }, root)
+
     return () => ctx.revert()
-  }, [isMobile, playSwipeSoundEffect])
+  }, [isMobile, playSwipeSoundEffect, items]) // Added items dependency
 
   // Mobile swipe handlers with velocity detection for smoother Android experience
   const handleTouchStart = useCallback((e) => {
     if (!isMobile || isAnimating) return
-    
+
     const touch = e.touches[0]
     setTouchStart(touch.clientX)
     setTouchStartY(touch.clientY)
@@ -332,7 +395,7 @@ export default function Showcase(){
 
   const handleTouchEnd = useCallback((e) => {
     if (!isMobile || isAnimating) return
-    
+
     const now = Date.now()
     if (now - lastSwipeTime.current < 350) return // Reduced throttle for faster feedback
     lastSwipeTime.current = now
@@ -341,20 +404,20 @@ export default function Showcase(){
     const touchEndY = e.changedTouches[0].clientY
     const diff = touchStart - touchEnd
     const diffY = Math.abs(touchEndY - touchStartY)
-    
+
     // Must be mostly horizontal swipe
     if (diffY > Math.abs(diff)) return
-    
+
     const threshold = 30 // Even lower threshold for sensitivity
-    
+
     if (Math.abs(diff) < threshold) return
 
     setIsAnimating(true)
-    
+
     // Calculate velocity for natural swipe feel
     const timeDiff = Math.max(1, now - lastTimeRef.current)
     velocityRef.current = Math.abs(diff) / timeDiff
-    
+
     // Swipe left: show next card
     if (diff > threshold && focusedCardIndex < list.length - 1) {
       setFocusedCardIndex(focusedCardIndex + 1)
@@ -365,29 +428,29 @@ export default function Showcase(){
       setFocusedCardIndex(focusedCardIndex - 1)
       playSwipeSoundEffect()
     }
-    
+
     // Reset animation flag faster on Android
     setTimeout(() => setIsAnimating(false), 350)
   }, [isMobile, focusedCardIndex, list.length, touchStart, touchStartY, playSwipeSoundEffect, isAnimating])
 
   return (
-    <section 
-      ref={ref} 
+    <section
+      ref={ref}
       className="my-20 rounded-2xl border bg-animated overflow-hidden min-h-[40vh] md:min-h-[70vh] flex flex-col justify-center"
       style={{ isolation: 'isolate' }}
     >
       <div className="px-4 sm:px-6 py-6 sm:py-8">
-        <h3 className="font-display text-gradient text-xl sm:text-2xl md:text-3xl">Signature Showcase</h3>
+        <h3 className="font-display text-gradient text-xl sm:text-2xl md:text-3xl pb-2 leading-relaxed">Signature Showcase</h3>
         <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-300 mt-2">
-          {isMobile 
-            ? `👆 Swipe to browse • Card ${focusedCardIndex + 1}/${list.length} ♪` 
+          {isMobile
+            ? `👆 Swipe to browse • Card ${focusedCardIndex + 1}/${list.length} ♪`
             : '📜 Scroll to explore • Sound enabled ♪'}
         </p>
       </div>
-      
+
       {isMobile ? (
         // MOBILE: 3D Stacked card swipe effect (optimized for Android)
-        <div 
+        <div
           ref={containerRef}
           className="relative w-full flex-1 flex items-center justify-center py-8 px-0 sm:px-6 overflow-hidden"
           onTouchStart={handleTouchStart}
@@ -404,7 +467,7 @@ export default function Showcase(){
           {/* Safe area padding wrapper */}
           <div className="w-full max-w-xs px-4 sm:px-0">
             {/* 3D Stacked cards container - FIXED WIDTH to prevent overflow */}
-            <div 
+            <div
               className="relative w-full h-96"
               style={{
                 transformStyle: 'preserve-3d',
@@ -414,28 +477,28 @@ export default function Showcase(){
               {/* Render all cards in a stack, with progressive transformations */}
               {list.map((item, idx) => {
                 const positionFromFront = idx - focusedCardIndex
-                
+
                 // Only show cards within reasonable distance
                 if (positionFromFront < -2 || positionFromFront > 2) return null
-                
+
                 // FAN EFFECT: Cards arranged in a semi-circle/fan pattern
                 // Front card (positionFromFront = 0) is center
                 // Behind cards rotate outward with increasing angle
                 const baseScale = 0.95
                 const scale = baseScale + Math.max(0, -positionFromFront) * 0.06 // Back cards slightly larger
-                
+
                 // Fan rotation angle (degrees) - creates the semi-circular spread
                 const rotationAngle = positionFromFront * 12 // Each card rotates 12 degrees
-                
+
                 // Stacking depth with perspective
                 const zOffset = -positionFromFront * 40 // Negative = behind, positive = in front
                 const yOffset = Math.abs(positionFromFront) * 8 // Cards move down as they go back
-                
+
                 // Blur: Only blur when card is NOT in focus (positionFromFront !== 0)
                 // Front card (0) is always sharp, background cards blur increases with distance
                 const blur = positionFromFront === 0 ? 0 : Math.max(0, Math.abs(positionFromFront) * 5)
                 const opacity = positionFromFront === 0 ? 1 : Math.max(0.5, 1 - Math.abs(positionFromFront) * 0.3)
-                
+
                 return (
                   <div
                     key={item.id}
@@ -456,7 +519,7 @@ export default function Showcase(){
                       WebkitBackfaceVisibility: 'hidden',
                     }}
                   >
-                    <ShowcaseCard 
+                    <ShowcaseCard
                       item={item}
                       index={idx}
                       total={list.length}
@@ -475,11 +538,11 @@ export default function Showcase(){
         </div>
       ) : (
         // DESKTOP: Horizontal scroll with sound
-        <div 
+        <div
           ref={scrollContainerRef}
           className="relative w-full flex-1 overflow-hidden py-8 px-6"
         >
-          <div 
+          <div
             className="sc-track flex gap-4 will-change-transform"
             style={{
               minHeight: '100%',
@@ -487,8 +550,8 @@ export default function Showcase(){
             }}
           >
             {list.map((it, idx) => (
-              <div 
-                key={it.id} 
+              <div
+                key={it.id}
                 className="sc-card flex-shrink-0"
                 style={{
                   width: '320px',
@@ -511,7 +574,7 @@ export default function Showcase(){
       )}
 
       {/* Image Lightbox Modal */}
-      <ImageLightbox 
+      <ImageLightbox
         image={lightboxImage}
         title={lightboxTitle}
         isOpen={lightboxOpen}

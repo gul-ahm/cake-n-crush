@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { getContent, saveContent, uploadFile } from '../../services/contentService'
 
 export default function ShowcaseManager({ perfMode }) {
   const [showcaseItems, setShowcaseItems] = useState([])
@@ -7,50 +8,53 @@ export default function ShowcaseManager({ perfMode }) {
   const [isUploading, setIsUploading] = useState(false)
 
   useEffect(() => {
-    // Load showcase items from localStorage
-    const stored = localStorage.getItem('showcase_items')
-    if (stored) {
-      setShowcaseItems(JSON.parse(stored))
+    // Load showcase items from server
+    const load = async () => {
+      const data = await getContent('showcase')
+      if (data) setShowcaseItems(data)
     }
+    load()
   }, [])
 
-  const saveToStorage = (items) => {
-    localStorage.setItem('showcase_items', JSON.stringify(items))
+  const saveToStorage = async (items) => {
+    await saveContent('showcase', items)
     setShowcaseItems(items)
   }
 
   const handleAddItem = async () => {
     if (!newItem.title || !newItem.url) return
-    
+
     setIsUploading(true)
-    
+
     const item = {
       id: Date.now(),
       ...newItem,
       createdAt: new Date().toISOString()
     }
-    
+
     const updatedItems = [...showcaseItems, item]
-    saveToStorage(updatedItems)
-    
+    await saveToStorage(updatedItems)
+
     setNewItem({ title: '', type: 'image', url: '', description: '' })
     setIsUploading(false)
   }
 
-  const handleRemoveItem = (id) => {
+  const handleRemoveItem = async (id) => {
     const updatedItems = showcaseItems.filter(item => item.id !== id)
-    saveToStorage(updatedItems)
+    await saveToStorage(updatedItems)
   }
 
-  const handleFileUpload = (e) => {
+  const handleFileUpload = async (e) => {
     const file = e.target.files[0]
     if (!file) return
 
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      setNewItem(prev => ({ ...prev, url: event.target.result }))
+    setIsUploading(true)
+    const url = await uploadFile(file)
+    setIsUploading(false)
+
+    if (url) {
+      setNewItem(prev => ({ ...prev, url }))
     }
-    reader.readAsDataURL(file)
   }
 
   return (
@@ -136,7 +140,7 @@ export default function ShowcaseManager({ perfMode }) {
           </button>
         </div>
       ) : (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-6 rounded-xl border border-purple-200 dark:border-purple-800"
@@ -212,74 +216,6 @@ export default function ShowcaseManager({ perfMode }) {
           </button>
         </motion.div>
       )}
-        <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-white">Add New Showcase Item</h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Title</label>
-            <input
-              type="text"
-              value={newItem.title}
-              onChange={(e) => setNewItem(prev => ({ ...prev, title: e.target.value }))}
-              className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="Enter showcase title"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Type</label>
-            <select
-              value={newItem.type}
-              onChange={(e) => setNewItem(prev => ({ ...prev, type: e.target.value }))}
-              className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-            >
-              <option value="image">Image</option>
-              <option value="video">Video</option>
-              <option value="gif">GIF</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</label>
-          <textarea
-            value={newItem.description}
-            onChange={(e) => setNewItem(prev => ({ ...prev, description: e.target.value }))}
-            rows={3}
-            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-            placeholder="Enter description"
-          />
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            {newItem.type === 'video' ? 'Video URL or Upload' : 'Image/File Upload'}
-          </label>
-          <div className="flex space-x-4">
-            <input
-              type="url"
-              value={newItem.url}
-              onChange={(e) => setNewItem(prev => ({ ...prev, url: e.target.value }))}
-              className="flex-1 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="Enter URL or upload file below"
-            />
-            <input
-              type="file"
-              onChange={handleFileUpload}
-              accept={newItem.type === 'video' ? 'video/*' : 'image/*,video/*'}
-              className="hidden"
-              id="showcase-file"
-            />
-            <label
-              htmlFor="showcase-file"
-              className="px-4 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-            >
-              📁 Upload
-            </label>
-          </div>
-        </div>
-
-      
 
       {/* Current Showcase Items */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" style={perfMode ? { contain: 'content' } : undefined}>
@@ -313,7 +249,7 @@ export default function ShowcaseManager({ perfMode }) {
                 {item.type}
               </div>
             </div>
-            
+
             <div className="p-4">
               <h3 className="font-semibold text-gray-900 dark:text-white mb-1">{item.title}</h3>
               {item.description && (

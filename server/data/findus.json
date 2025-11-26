@@ -1,0 +1,27 @@
+{
+  "location": {
+    "name": "Cake N Crush",
+    "address": "Near-Future care tutorials, Ansar nagar, Hazaribagh, Jharkhand",
+    "lat": 24.007498,
+    "lng": 85.34518,
+    "phone": "+917091319448",
+    "email": "saniyawahid786@gmail.com",
+    "hours": {
+      "monday": "9:00 AM - 8:00 PM",
+      "tuesday": "9:00 AM - 8:00 PM",
+      "wednesday": "9:00 AM - 8:00 PM",
+      "thursday": "9:00 AM - 8:00 PM",
+      "friday": "9:00 AM - 10:00 PM",
+      "saturday": "8:00 AM - 10:00 PM",
+      "sunday": "10:00 AM - 6:00 PM"
+    }
+  },
+  "mapSettings": {
+    "zoom": 15,
+    "style": "roadmap",
+    "showTraffic": true,
+    "showTransit": true
+  },
+  "customMapImage": "",
+  "description": "Visit our cozy bakery for the finest custom cakes and delightful treats!"
+}

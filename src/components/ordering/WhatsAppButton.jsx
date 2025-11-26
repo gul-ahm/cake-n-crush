@@ -1,12 +1,14 @@
 import { motion, useMotionValue } from 'framer-motion'
 import { buildWhatsAppLink } from '../../utils/whatsappUtils'
 import { siWhatsapp } from 'simple-icons/icons'
+import { useSocial } from '../../contexts/SocialContext'
 
 import { log as logActivity } from '../../services/activityService'
 import { useEffect, useRef } from 'react'
 
-export default function WhatsAppButton({ item, size = 'md', variant = 'solid', className = '' }){
-  const href = buildWhatsAppLink(item)
+export default function WhatsAppButton({ item, size = 'md', variant = 'solid', className = '' }) {
+  const { socials } = useSocial()
+  const href = buildWhatsAppLink(item, socials?.main?.whatsapp)
   const sizes = {
     sm: 'px-3 py-1.5 text-sm',
     md: 'px-4 py-2',
@@ -51,7 +53,7 @@ export default function WhatsAppButton({ item, size = 'md', variant = 'solid', c
         rel="noreferrer"
         aria-label="Order via WhatsApp"
         className={`inline-flex items-center justify-center rounded-full bg-whatsapp text-white shadow-lg w-12 h-12 ${className}`}
-        onClick={()=> logActivity('order_click', { id: item?.id, name: item?.name })}
+        onClick={() => logActivity('order_click', { id: item?.id, name: item?.name })}
         style={{ x: mx, y: my }}
         initial={{ opacity: 0, y: 12, scale: 0.6 }}
         whileInView={{ opacity: 1, y: 0, scale: 1 }}
@@ -74,7 +76,9 @@ export default function WhatsAppButton({ item, size = 'md', variant = 'solid', c
       target="_blank"
       rel="noreferrer"
       className={`inline-flex items-center gap-2 rounded-md bg-whatsapp text-white ${cls} ${className}`}
-      onClick={()=> logActivity('order_click', { id: item?.id, name: item?.name })}
+      onClick={() => {
+        try { logActivity('order_click', { id: item?.id, name: item?.name }) } catch (e) { console.error(e) }
+      }}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.98 }}
     >

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { getContent, saveContent } from '../../services/contentService'
 
 export default function SocialMediaManager({ perfMode }) {
   const [socialLinks, setSocialLinks] = useState({
@@ -12,54 +13,49 @@ export default function SocialMediaManager({ perfMode }) {
     whatsapp: '+1234567890',
     telegram: ''
   })
-  
+
   const [customLinks, setCustomLinks] = useState([])
   const [newCustomLink, setNewCustomLink] = useState({ name: '', url: '', icon: '🌐' })
 
   useEffect(() => {
-    // Load social links from localStorage
-    const stored = localStorage.getItem('social_links')
-    if (stored) {
-      setSocialLinks({ ...socialLinks, ...JSON.parse(stored) })
+    // Load social links from server
+    const load = async () => {
+      const data = await getContent('social')
+      if (data) {
+        if (data.main) setSocialLinks(data.main)
+        if (data.custom) setCustomLinks(data.custom)
+      }
     }
-
-    const customStored = localStorage.getItem('custom_social_links')
-    if (customStored) {
-      setCustomLinks(JSON.parse(customStored))
-    }
+    load()
   }, [])
 
-  const saveSocialLinks = (links) => {
-    localStorage.setItem('social_links', JSON.stringify(links))
-    setSocialLinks(links)
-  }
-
-  const saveCustomLinks = (links) => {
-    localStorage.setItem('custom_social_links', JSON.stringify(links))
-    setCustomLinks(links)
+  const saveAllLinks = async (main, custom) => {
+    await saveContent('social', { main, custom })
+    setSocialLinks(main)
+    setCustomLinks(custom)
   }
 
   const handleSocialChange = (platform, value) => {
     const newLinks = { ...socialLinks, [platform]: value }
-    saveSocialLinks(newLinks)
+    saveAllLinks(newLinks, customLinks)
   }
 
   const addCustomLink = () => {
     if (!newCustomLink.name || !newCustomLink.url) return
-    
+
     const link = {
       id: Date.now(),
       ...newCustomLink
     }
-    
+
     const updatedLinks = [...customLinks, link]
-    saveCustomLinks(updatedLinks)
+    saveAllLinks(socialLinks, updatedLinks)
     setNewCustomLink({ name: '', url: '', icon: '🌐' })
   }
 
   const removeCustomLink = (id) => {
     const updatedLinks = customLinks.filter(link => link.id !== id)
-    saveCustomLinks(updatedLinks)
+    saveAllLinks(socialLinks, updatedLinks)
   }
 
   const socialPlatforms = [
@@ -123,11 +119,10 @@ export default function SocialMediaManager({ perfMode }) {
                   type={platform.key === 'whatsapp' ? 'tel' : 'url'}
                   value={socialLinks[platform.key]}
                   onChange={(e) => handleSocialChange(platform.key, e.target.value)}
-                  className={`w-full p-3 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 ${
-                    !validateUrl(socialLinks[platform.key], platform.key)
+                  className={`w-full p-3 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 ${!validateUrl(socialLinks[platform.key], platform.key)
                       ? 'border-red-300 dark:border-red-600'
                       : 'border-gray-300 dark:border-gray-600'
-                  }`}
+                    }`}
                   placeholder={platform.placeholder}
                 />
                 {socialLinks[platform.key] && (
@@ -170,11 +165,10 @@ export default function SocialMediaManager({ perfMode }) {
                   type={platform.key === 'whatsapp' ? 'tel' : 'url'}
                   value={socialLinks[platform.key]}
                   onChange={(e) => handleSocialChange(platform.key, e.target.value)}
-                  className={`w-full p-3 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 ${
-                    !validateUrl(socialLinks[platform.key], platform.key)
+                  className={`w-full p-3 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 ${!validateUrl(socialLinks[platform.key], platform.key)
                       ? 'border-red-300 dark:border-red-600'
                       : 'border-gray-300 dark:border-gray-600'
-                  }`}
+                    }`}
                   placeholder={platform.placeholder}
                 />
                 {socialLinks[platform.key] && (

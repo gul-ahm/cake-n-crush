@@ -4,11 +4,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { revealStagger } from '../utils/animations'
 import WhatsAppButton from '../components/ordering/WhatsAppButton'
 import ParallaxHeader from '../components/common/ParallaxHeader'
-import TiltCard from '../components/effects/TiltCard'
 import { gradientFor } from '../utils/categoryColors'
 import CategoryFilter from '../components/portfolio/CategoryFilter'
 
-export default function Portfolio(){
+export default function Portfolio() {
   const { items } = usePortfolio()
   const [searchParams, setSearchParams] = useSearchParams()
   const categories = useMemo(() => Array.from(new Set(items.map(i => i.category))).filter(Boolean), [items])
@@ -38,8 +37,8 @@ export default function Portfolio(){
   }, [active, debouncedQuery, setSearchParams])
 
   // Persist to localStorage
-  useEffect(() => { try { localStorage.setItem('pf_category', active) } catch {} }, [active])
-  useEffect(() => { try { localStorage.setItem('pf_q', debouncedQuery) } catch {} }, [debouncedQuery])
+  useEffect(() => { try { localStorage.setItem('pf_category', active) } catch { } }, [active])
+  useEffect(() => { try { localStorage.setItem('pf_q', debouncedQuery) } catch { } }, [debouncedQuery])
 
   // '/' keyboard shortcut to focus search
   useEffect(() => {
@@ -62,10 +61,10 @@ export default function Portfolio(){
     return base.filter(i => i.name?.toLowerCase().includes(q) || i.description?.toLowerCase().includes(q))
   }, [items, active, debouncedQuery])
   const ref = useRef(null)
-  useEffect(()=>{
+  useEffect(() => {
     if (!ref.current) return
     revealStagger('.portfolio-card', { root: ref.current, y: 16, stagger: 0.06 })
-  },[])
+  }, [])
   return (
     <div ref={ref} className="max-w-6xl mx-auto px-4 py-8">
       <ParallaxHeader title="Portfolio" subtitle="Browse categories, tap for details, and order instantly." />
@@ -77,13 +76,13 @@ export default function Portfolio(){
               <input
                 ref={searchRef}
                 value={query}
-                onChange={e=>setQuery(e.target.value)}
+                onChange={e => setQuery(e.target.value)}
                 placeholder="Search cakes..."
                 className="w-full rounded-lg border px-3 py-2 bg-white/70 dark:bg-zinc-900/70 backdrop-blur"
                 aria-label="Search cakes by name or description"
               />
               {query && (
-                <button className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-neutral-600" onClick={()=>setQuery('')}>Clear</button>
+                <button className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-neutral-600" onClick={() => setQuery('')}>Clear</button>
               )}
             </div>
             <span className="hidden md:inline text-xs text-neutral-500 dark:text-neutral-400">Press <kbd className="px-1 py-0.5 border rounded bg-white/60 dark:bg-zinc-800/60">/</kbd> to search</span>
@@ -102,29 +101,36 @@ export default function Portfolio(){
       )}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {shown.map((it) => (
-          <TiltCard key={it.id} className="portfolio-card">
+          <div key={it.id} className="portfolio-card transition-transform hover:-translate-y-1 duration-300">
             <div
-              className="group rounded-2xl relative"
+              className="group rounded-2xl relative h-full"
               style={{ backgroundImage: gradientFor(it.category), padding: 2 }}
             >
-              <div className="rounded-[14px] overflow-hidden bg-white/70 dark:bg-zinc-900/70 backdrop-blur shadow-lg border border-black/5 relative">
-                <div className="aspect-[4/5] bg-neutral-100 dark:bg-zinc-800">
+              <div className="rounded-[14px] overflow-hidden bg-white/70 dark:bg-zinc-900/70 backdrop-blur shadow-lg border border-black/5 relative h-full flex flex-col">
+                <div className="aspect-[4/5] bg-neutral-100 dark:bg-zinc-800 relative">
                   {it.images?.[0] && <img src={it.images[0]} alt={it.name} className="w-full h-full object-cover" />}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
                 </div>
-                <div className="p-3 text-sm">
+                <div className="p-3 text-sm flex-1 flex flex-col">
                   <div className="font-semibold truncate">{it.name}</div>
                   <div className="text-neutral-600 dark:text-neutral-300">{it.category} · {it.priceRange}</div>
-                  <div className="mt-2 flex justify-between items-center">
-                    <Link className="underline" to={`/portfolio/${it.id}`}>Details</Link>
+                  <div className="mt-auto pt-4 flex gap-2 relative z-20">
+                    <Link
+                      to={`/portfolio/${it.id}`}
+                      className="flex-1 text-center py-2 px-3 rounded-lg bg-neutral-100 dark:bg-zinc-800 hover:bg-neutral-200 dark:hover:bg-zinc-700 text-sm font-medium transition-colors"
+                    >
+                      Details
+                    </Link>
+                    <WhatsAppButton
+                      item={it}
+                      variant="solid"
+                      className="flex-1 !w-auto !rounded-lg !shadow-none justify-center"
+                    />
                   </div>
-                </div>
-                {/* Floating WhatsApp FAB with magnetic behavior */}
-                <div className="absolute bottom-2 right-2 z-10">
-                  <WhatsAppButton item={it} variant="fab" />
                 </div>
               </div>
             </div>
-          </TiltCard>
+          </div>
         ))}
       </div>
     </div>

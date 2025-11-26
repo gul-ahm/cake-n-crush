@@ -1,19 +1,28 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { findById, update } from '../services/portfolioService'
 import WhatsAppButton from '../components/ordering/WhatsAppButton'
 import { gradientFor } from '../utils/categoryColors'
 
-export default function CakeDetail(){
+export default function CakeDetail() {
   const { id } = useParams()
-  const item = findById(id)
-  useEffect(()=>{
-    if (item) {
-      update(item.id, { views: (item.views || 0) + 1 })
+  const [item, setItem] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const load = async () => {
+      const data = await findById(id)
+      setItem(data)
+      setLoading(false)
+      if (data) {
+        update(data.id, { views: (data.views || 0) + 1 })
+      }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    load()
   }, [id])
-  if (!item) return <div className="max-w-6xl mx-auto px-4 py-8">Not found</div>
+
+  if (loading) return <div className="max-w-6xl mx-auto px-4 py-8 text-center">Loading...</div>
+  if (!item) return <div className="max-w-6xl mx-auto px-4 py-8 text-center">Cake not found</div>
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div
@@ -33,7 +42,7 @@ export default function CakeDetail(){
           <div className="text-neutral-600 mb-4">{item.priceRange}</div>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-3">
-              {(item.images||[]).map((src,i)=>(
+              {(item.images || []).map((src, i) => (
                 <img key={i} src={src} alt={item.name} className="w-full rounded-xl border" />
               ))}
             </div>

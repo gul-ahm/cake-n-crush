@@ -1,0 +1,98 @@
+[
+  {
+    "name": "8",
+    "category": "Birthday",
+    "priceRange": "₹1000 - ₹3000",
+    "description": "",
+    "images": [
+      "/uploads/1764102655299-408968660.jpg"
+    ],
+    "views": 0,
+    "id": "fcbdd89e-6852-4f52-93c3-f8d10555bed6",
+    "createdAt": 1764102655316
+  },
+  {
+    "name": "7",
+    "category": "Birthday",
+    "priceRange": "₹1000 - ₹3000",
+    "description": "",
+    "images": [
+      "/uploads/1764102590731-962558162.jpg"
+    ],
+    "views": 0,
+    "id": "c9c0e192-f3d6-40ff-af45-365e4acf4fff",
+    "createdAt": 1764102590752
+  },
+  {
+    "name": "6",
+    "category": "Wedding",
+    "priceRange": "₹1000 - ₹3000",
+    "description": "",
+    "images": [
+      "/uploads/1764102580668-356377040.jpg"
+    ],
+    "views": 0,
+    "id": "f79c89a6-c760-4919-a25d-fa850924e854",
+    "createdAt": 1764102580682
+  },
+  {
+    "name": "5",
+    "category": "Wedding",
+    "priceRange": "₹1000 - ₹3000",
+    "description": "",
+    "images": [
+      "/uploads/1764102477780-705455536.jpg"
+    ],
+    "views": 0,
+    "id": "44284943-a1c2-4ab0-b2c8-d8e49bcfb06f",
+    "createdAt": 1764102477795
+  },
+  {
+    "name": "4",
+    "category": "Birthday",
+    "priceRange": "₹1000 - ₹3000",
+    "description": "",
+    "images": [
+      "/uploads/1764102463691-654175669.webp"
+    ],
+    "views": 0,
+    "id": "5a8f09b5-ae00-45be-a545-7c0fe2194470",
+    "createdAt": 1764102463705
+  },
+  {
+    "name": "3",
+    "category": "Birthday",
+    "priceRange": "₹1000 - ₹3000",
+    "description": "",
+    "images": [
+      "/uploads/1764102452937-905388639.jpg"
+    ],
+    "views": 0,
+    "id": "a812223b-1b04-4efb-88ee-098997d53d2d",
+    "createdAt": 1764102452954
+  },
+  {
+    "name": "2",
+    "category": "Birthday",
+    "priceRange": "₹1000 - ₹3000",
+    "description": "",
+    "images": [
+      "/uploads/1764102442169-2447609.webp"
+    ],
+    "views": 0,
+    "id": "201a4bf4-2d7d-41f2-8cea-fe8654f97191",
+    "createdAt": 1764102442182
+  },
+  {
+    "name": "1",
+    "category": "Birthday",
+    "priceRange": "₹1000 - ₹3000",
+    "description": "",
+    "images": [
+      "/uploads/1764102428108-530821527.jpg"
+    ],
+    "views": 0,
+    "id": "8e392465-1b72-4ffd-85c1-e3eb1797dfc0",
+    "createdAt": 1764102428146
+  }
+]

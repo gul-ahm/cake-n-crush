@@ -6,8 +6,12 @@ export default function usePortfolio() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    setItems(portfolioService.getAll())
-    setLoading(false)
+    const load = async () => {
+      const data = await portfolioService.getAll()
+      setItems(data)
+      setLoading(false)
+    }
+    load()
   }, [])
 
   const add = async (entry) => {
@@ -30,7 +34,7 @@ export default function usePortfolio() {
     setItems(saved)
   }
 
-  const categories = useMemo(() => ['Birthday','Wedding','Custom','Seasonal'], [])
+  const categories = useMemo(() => ['Birthday', 'Wedding', 'Custom', 'Seasonal'], [])
 
   return { items, loading, add, update, remove, reorder, categories }
 }

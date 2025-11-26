@@ -1,0 +1,146 @@
+.container {
+  position: relative;
+  width: auto;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1;
+  margin: 0;
+  --elastic: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --x: 0px;
+  --y: 0px;
+  --t: rgba(255, 255, 255, 0.001);
+  --lightest: #f897d5;
+  --light: #f567c2;
+  --dark: #755ad0;
+  --darkest: #1a2a6c;
+}
+
+.container:hover {
+  z-index: 2;
+}
+
+.inner {
+  display: inline-block;
+  position: relative;
+  pointer-events: all;
+  z-index: 2;
+  cursor: pointer;
+  border-radius: 50px;
+  overflow: hidden;
+  /* Critical for pill shape */
+  background: #000;
+  /* Fallback background */
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease;
+}
+
+.inner:hover {
+  transform: scale(1.02);
+}
+
+.inner:hover .blob:before {
+  transition: transform 500ms var(--elastic), box-shadow 1000ms var(--elastic);
+  transform: translate(clamp(5%, calc(var(--x) - 50%), 550%),
+      clamp(1rem, calc(var(--y) - 50%), 5rem)) scale(1.25);
+  box-shadow: 0 0 0 0.05rem #fff, 0 -6rem 0 1.25rem #fff, 0 6rem 0 1.25rem #fff;
+}
+
+.inner:active {
+  cursor: grab;
+  transform: scale(0.98);
+}
+
+.inner:active:hover .blob:before {
+  box-shadow: 0 0 0 0rem #fff, 0 -5rem 0 1.75rem #fff, 0 5rem 0 1.75rem #fff;
+  transition: transform 500ms var(--elastic), box-shadow 500ms var(--elastic);
+  transform: translate(clamp(5%, calc(var(--x) - 50%), 550%),
+      clamp(calc(50% + 1rem), calc(var(--y) - 50%), calc(50% + 1.5rem))) scale(1);
+}
+
+.inner:hover:before {
+  filter: blur(2px) brightness(1);
+  background-size: 0px 0px, 100% 100%, 100%;
+  transition: transform 0.5s var(--elastic), background-size 0.25s ease-in-out;
+}
+
+.inner:before {
+  content: "";
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  top: 0rem;
+  left: 0rem;
+  filter: blur(2px) brightness(0.8);
+  /* Increased brightness to be visible */
+  background: radial-gradient(ellipse at center,
+      rgba(0, 0, 0, 0.25) 0%,
+      var(--t) 20%),
+    radial-gradient(circle at center,
+      var(--lightest),
+      var(--light) 5%,
+      var(--dark) 30%,
+      var(--darkest) 50%),
+    var(--darkest);
+  background-size: 0px 0px, 0px 0px, 100%;
+  background-position: 50% 50%;
+  background-repeat: no-repeat;
+  opacity: 1;
+  /* mix-blend-mode: lighten; Removed to ensure visibility */
+  z-index: 1;
+  /* Behind text, above blob */
+  transition: transform 0.5s var(--elastic), background-size 0.25s ease-in-out,
+    filter 0.5s ease-in-out;
+  transform: translate(calc(var(--x) - 50%), calc(var(--y) - 50%));
+  pointer-events: none;
+}
+
+.button {
+  padding: 1.25rem 2.5rem;
+  border: none;
+  font-size: 1rem;
+  position: relative;
+  background: transparent;
+  color: #fff;
+  z-index: 10;
+  /* Topmost */
+  cursor: pointer;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.blob {
+  position: absolute;
+  pointer-events: none;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  background: transparent;
+  /* Removed white fog */
+  /* filter: blur(12px) contrast(25); Removed complex filter for cleaner look */
+  z-index: 0;
+  border-radius: 50px;
+  overflow: hidden;
+}
+
+.blob:before {
+  content: "";
+  position: absolute;
+  background: rgba(255, 255, 255, 0.2);
+  /* Subtle highlight instead of black/white goo */
+  width: 20%;
+  height: auto;
+  z-index: 2;
+  transition: transform 750ms var(--elastic), box-shadow 500ms var(--elastic);
+  aspect-ratio: 1/1;
+  left: 0;
+  top: 0;
+  border-radius: 100%;
+  transform: translate(clamp(10%, calc(var(--x) - 50%), 550%),
+      clamp(1rem, calc(var(--y) - 50%), 5rem)) scale(0);
+  filter: blur(10px);
+}

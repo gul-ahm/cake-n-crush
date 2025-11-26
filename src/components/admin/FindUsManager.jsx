@@ -1,5 +1,16 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { getContent, saveContent, uploadFile } from '../../services/contentService';
+
+const Container = ({ children, motionProps, className, perfMode }) => (
+  perfMode ? (
+    <div className={className}>{children}</div>
+  ) : (
+    <motion.div {...motionProps} className={className}>
+      {children}
+    </motion.div>
+  )
+);
 
 export default function FindUsManager({ perfMode }) {
   const [findUsData, setFindUsData] = useState({
@@ -30,27 +41,51 @@ export default function FindUsManager({ perfMode }) {
     description: 'Visit our cozy bakery for the finest custom cakes and delightful treats!',
   });
 
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
   useEffect(() => {
-    const stored = localStorage.getItem('findus_data');
-    if (stored) {
-      setFindUsData((prev) => ({ ...prev, ...JSON.parse(stored) }));
-    }
+    const load = async () => {
+      const data = await getContent('findus');
+      if (data && Object.keys(data).length > 0) {
+        setFindUsData((prev) => ({ ...prev, ...data }));
+      }
+    };
+    load();
   }, []);
 
-  const saveData = (data) => {
-    localStorage.setItem('findus_data', JSON.stringify(data));
-    setFindUsData(data);
+  const handleSave = async () => {
+    setIsSaving(true);
+    await saveContent('findus', findUsData);
+    setHasUnsavedChanges(false);
+    setIsSaving(false);
+
+    // Show success confetti
+    try {
+      const mod = await import('canvas-confetti');
+      const confetti = mod.default || mod;
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+    } catch { }
+  };
+
+  const updateLocalState = (newData) => {
+    setFindUsData(newData);
+    setHasUnsavedChanges(true);
   };
 
   const handleLocationChange = (field, value) => {
-    saveData({
+    updateLocalState({
       ...findUsData,
       location: { ...findUsData.location, [field]: value },
     });
   };
 
   const handleHoursChange = (day, value) => {
-    saveData({
+    updateLocalState({
       ...findUsData,
       location: {
         ...findUsData.location,
@@ -60,21 +95,20 @@ export default function FindUsManager({ perfMode }) {
   };
 
   const handleMapSettingsChange = (field, value) => {
-    saveData({
+    updateLocalState({
       ...findUsData,
       mapSettings: { ...findUsData.mapSettings, [field]: value },
     });
   };
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      saveData({ ...findUsData, customMapImage: event.target.result });
-    };
-    reader.readAsDataURL(file);
+    const url = await uploadFile(file);
+    if (url) {
+      updateLocalState({ ...findUsData, customMapImage: url });
+    }
   };
 
   const generateGoogleMapsUrl = () => {
@@ -83,25 +117,29 @@ export default function FindUsManager({ perfMode }) {
     return `https://www.google.com/maps/embed/v1/place?key=YOUR_API_KEY&q=${lat},${lng}&zoom=${zoom}&maptype=${style}`;
   };
 
-  const Container = ({ children, motionProps, className }) => (
-    perfMode ? (
-      <div className={className}>{children}</div>
-    ) : (
-      <motion.div {...motionProps} className={className}>
-        {children}
-      </motion.div>
-    )
-  );
-
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Find Us Manager</h2>
-        <div className="text-sm text-gray-600 dark:text-gray-400">Location & Contact Management</div>
+      <div className="flex justify-between items-center sticky top-0 z-10 bg-white/80 dark:bg-gray-900/80 backdrop-blur py-4 border-b border-gray-200 dark:border-gray-700">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Find Us Manager</h2>
+          <div className="text-sm text-gray-600 dark:text-gray-400">Location & Contact Management</div>
+        </div>
+        <button
+          onClick={handleSave}
+          disabled={!hasUnsavedChanges || isSaving}
+          className={`px-6 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 ${hasUnsavedChanges
+            ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5'
+            : 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+            }`}
+        >
+          <span>{isSaving ? 'Saving...' : 'Save Changes'}</span>
+          {hasUnsavedChanges && !isSaving && <span className="animate-pulse">●</span>}
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Container
+          perfMode={perfMode}
           motionProps={{ initial: { opacity: 0, x: -20 }, animate: { opacity: 1, x: 0 } }}
           className={`rounded-xl p-6 border border-gray-200 dark:border-gray-700 ${perfMode ? 'bg-white dark:bg-gray-800' : 'bg-white dark:bg-gray-800 shadow-lg'}`}
         >
@@ -171,7 +209,7 @@ export default function FindUsManager({ perfMode }) {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</label>
               <textarea
                 value={findUsData.description}
-                onChange={(e) => saveData({ ...findUsData, description: e.target.value })}
+                onChange={(e) => updateLocalState({ ...findUsData, description: e.target.value })}
                 rows={3}
                 className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 placeholder="Brief description for the Find Us page"
@@ -181,6 +219,7 @@ export default function FindUsManager({ perfMode }) {
         </Container>
 
         <Container
+          perfMode={perfMode}
           motionProps={{ initial: { opacity: 0, x: 20 }, animate: { opacity: 1, x: 0 } }}
           className={`rounded-xl p-6 border border-gray-200 dark:border-gray-700 ${perfMode ? 'bg-white dark:bg-gray-800' : 'bg-white dark:bg-gray-800 shadow-lg'}`}
         >
@@ -203,6 +242,7 @@ export default function FindUsManager({ perfMode }) {
       </div>
 
       <Container
+        perfMode={perfMode}
         motionProps={{ initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 } }}
         className={`rounded-xl p-6 border border-gray-200 dark:border-gray-700 ${perfMode ? 'bg-white dark:bg-gray-800' : 'bg-white dark:bg-gray-800 shadow-lg'}`}
       >
@@ -272,7 +312,7 @@ export default function FindUsManager({ perfMode }) {
             </label>
             {findUsData.customMapImage && (
               <button
-                onClick={() => saveData({ ...findUsData, customMapImage: '' })}
+                onClick={() => updateLocalState({ ...findUsData, customMapImage: '' })}
                 className="px-4 py-2 bg-red-200 dark:bg-red-900 text-red-700 dark:text-red-300 rounded hover:bg-red-300 dark:hover:bg-red-800 transition-colors"
               >
                 🗑️ Remove Custom Image

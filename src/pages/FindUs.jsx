@@ -2,42 +2,47 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import MinimalMap from '../components/maps/MinimalMap'
 
-export default function FindUs(){
+import { getContent } from '../services/contentService'
+
+export default function FindUs() {
   const [findUsData, setFindUsData] = useState(null)
   const [userLocation, setUserLocation] = useState(null)
   const [locationError, setLocationError] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Load find us data from localStorage (from admin panel)
-    const stored = localStorage.getItem('findus_data')
-    if (stored) {
-      setFindUsData(JSON.parse(stored))
-    } else {
-      // Default data
-      setFindUsData({
-        location: {
-          name: 'Cake N Crush',
-          address: '123 Sweet Street, Cake City, CC 12345',
-          lat: 26.9124,
-          lng: 75.7873,
-          phone: '+1 (555) 123-CAKE',
-          email: 'info@cakencrush.com',
-          hours: {
-            monday: '9:00 AM - 8:00 PM',
-            tuesday: '9:00 AM - 8:00 PM',
-            wednesday: '9:00 AM - 8:00 PM',
-            thursday: '9:00 AM - 8:00 PM',
-            friday: '9:00 AM - 10:00 PM',
-            saturday: '8:00 AM - 10:00 PM',
-            sunday: '10:00 AM - 6:00 PM'
-          }
-        },
-        description: 'Visit our cozy bakery for the finest custom cakes and delightful treats!',
-        customMapImage: ''
-      })
+    // Load find us data from server
+    const load = async () => {
+      const data = await getContent('findus')
+      if (data && Object.keys(data).length > 0) {
+        setFindUsData(data)
+      } else {
+        // Default data
+        setFindUsData({
+          location: {
+            name: 'Cake N Crush',
+            address: '123 Sweet Street, Cake City, CC 12345',
+            lat: 26.9124,
+            lng: 75.7873,
+            phone: '+1 (555) 123-CAKE',
+            email: 'info@cakencrush.com',
+            hours: {
+              monday: '9:00 AM - 8:00 PM',
+              tuesday: '9:00 AM - 8:00 PM',
+              wednesday: '9:00 AM - 8:00 PM',
+              thursday: '9:00 AM - 8:00 PM',
+              friday: '9:00 AM - 10:00 PM',
+              saturday: '8:00 AM - 10:00 PM',
+              sunday: '10:00 AM - 6:00 PM'
+            }
+          },
+          description: 'Visit our cozy bakery for the finest custom cakes and delightful treats!',
+          customMapImage: ''
+        })
+      }
+      setIsLoading(false)
     }
-    setIsLoading(false)
+    load()
 
     // Get user location
     if (navigator.geolocation) {
@@ -59,9 +64,9 @@ export default function FindUs(){
 
   const openDirections = () => {
     if (!findUsData) return
-    
+
     const { lat, lng } = findUsData.location
-    
+
     if (userLocation) {
       // Open OpenStreetMap directions
       const directionsUrl = `https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=${userLocation.lat}%2C${userLocation.lng}%3B${lat}%2C${lng}`
@@ -144,7 +149,7 @@ export default function FindUs(){
                 <span className="text-3xl mr-3">📍</span>
                 Our Location
               </h2>
-              
+
               <div className="space-y-4">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
@@ -205,26 +210,23 @@ export default function FindUs(){
                 <span className="text-3xl mr-3">🕒</span>
                 Business Hours
               </h2>
-              
+
               <div className="space-y-3">
                 {Object.entries(findUsData?.location?.hours || {}).map(([day, hours]) => (
                   <div
                     key={day}
-                    className={`flex justify-between items-center p-3 rounded-lg ${
-                      day === currentDay
+                    className={`flex justify-between items-center p-3 rounded-lg ${day === currentDay
                         ? 'bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800'
                         : 'bg-gray-50 dark:bg-gray-800/50'
-                    }`}
+                      }`}
                   >
-                    <span className={`font-medium capitalize ${
-                      day === currentDay ? 'text-purple-700 dark:text-purple-300' : 'text-gray-700 dark:text-gray-300'
-                    }`}>
+                    <span className={`font-medium capitalize ${day === currentDay ? 'text-purple-700 dark:text-purple-300' : 'text-gray-700 dark:text-gray-300'
+                      }`}>
                       {day}
                       {day === currentDay && <span className="ml-2 text-sm">(Today)</span>}
                     </span>
-                    <span className={`${
-                      day === currentDay ? 'text-purple-600 dark:text-purple-400 font-semibold' : 'text-gray-600 dark:text-gray-400'
-                    }`}>
+                    <span className={`${day === currentDay ? 'text-purple-600 dark:text-purple-400 font-semibold' : 'text-gray-600 dark:text-gray-400'
+                      }`}>
                       {hours}
                     </span>
                   </div>
@@ -246,7 +248,7 @@ export default function FindUs(){
                 <span className="text-2xl mr-3">🧭</span>
                 Your Location
               </h2>
-              
+
               {userLocation ? (
                 <div className="text-green-600 dark:text-green-400">
                   <p className="flex items-center">
@@ -289,7 +291,7 @@ export default function FindUs(){
                 <span className="text-3xl mr-3">🗺️</span>
                 Interactive Map
               </h2>
-              
+
               {findUsData?.customMapImage ? (
                 <div className="w-full h-96 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden">
                   <img
@@ -301,7 +303,7 @@ export default function FindUs(){
               ) : (
                 <div className="w-full h-96 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden relative">
                   {/* Minimal Map that always works */}
-                  <MinimalMap 
+                  <MinimalMap
                     userLocation={userLocation}
                     shopLocation={findUsData?.location}
                     onGetDirections={openDirections}

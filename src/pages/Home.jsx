@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { Link, useNavigate } from 'react-router-dom'
+import { motion, useScroll, useTransform } from 'framer-motion'
 import gsap from 'gsap'
 import { heroTimeline } from '../utils/animations'
 import AnimatedText from '../components/common/AnimatedText'
@@ -8,11 +8,19 @@ import ParallaxHero from '../components/common/ParallaxHero'
 import MouseGlow from '../components/effects/MouseGlow'
 import MagneticButton from '../components/common/MagneticButton'
 import Showcase from '../components/home/Showcase'
+import GooeyButton from '../components/common/GooeyButton'
 
-export default function Home(){
+import { getContent } from '../services/contentService'
+
+export default function Home() {
   const heroRef = useRef(null)
+  const navigate = useNavigate()
+  const { scrollY } = useScroll()
+  const y1 = useTransform(scrollY, [0, 500], [0, 200])
+  const y2 = useTransform(scrollY, [0, 500], [0, -150])
+
   const [findUsData, setFindUsData] = useState(null)
-  
+
   useEffect(() => {
     if (!heroRef.current) return
     const ctx = gsap.context(() => { heroTimeline(heroRef.current) }, heroRef)
@@ -21,31 +29,55 @@ export default function Home(){
 
   useEffect(() => {
     // Load find us data for preview section
-    const stored = localStorage.getItem('findus_data')
-    if (stored) {
-      setFindUsData(JSON.parse(stored))
-    } else {
-      // Default data
-      setFindUsData({
-        location: {
-          name: 'Cake N Crush',
-          address: '123 Sweet Street, Cake City, CC 12345',
-          phone: '+1 (555) 123-CAKE',
-          email: 'info@cakencrush.com',
-        }
-      })
+    const load = async () => {
+      const data = await getContent('findus')
+      if (data && Object.keys(data).length > 0) {
+        setFindUsData(data)
+      } else {
+        // Default data
+        setFindUsData({
+          location: {
+            name: 'Cake N Crush',
+            address: '123 Sweet Street, Cake City, CC 12345',
+            phone: '+1 (555) 123-CAKE',
+            email: 'info@cakencrush.com',
+          }
+        })
+      }
     }
+    load()
   }, [])
 
+  const scrollToPortfolio = () => {
+    const portfolioSection = document.getElementById('portfolio-preview')
+    if (portfolioSection) {
+      portfolioSection.scrollIntoView({ behavior: 'smooth' })
+    } else {
+      navigate('/portfolio')
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 dark:from-gray-900 dark:via-purple-900 dark:to-blue-900">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 dark:from-gray-900 dark:via-purple-900 dark:to-blue-900 overflow-x-hidden">
       <MouseGlow />
       <ParallaxHero />
-      
+
       <div ref={heroRef} className="w-full">
         {/* Hero Section */}
-        <section className="relative py-16 sm:py-24 lg:py-32">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="relative pt-24 pb-8 lg:pt-32 lg:pb-12 flex items-center justify-center overflow-hidden">
+          {/* Animated Background Elements */}
+          <div className="absolute inset-0 pointer-events-none">
+            <motion.div
+              style={{ y: y1 }}
+              className="absolute top-20 left-10 w-64 h-64 bg-purple-300/30 rounded-full blur-3xl"
+            />
+            <motion.div
+              style={{ y: y2 }}
+              className="absolute bottom-20 right-10 w-96 h-96 bg-pink-300/30 rounded-full blur-3xl"
+            />
+          </div>
+
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div className="text-center space-y-8">
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
@@ -62,51 +94,39 @@ export default function Home(){
                   🎂
                 </motion.div>
               </motion.div>
-              
+
               <motion.p
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
                 className="text-lg sm:text-xl lg:text-2xl text-neutral-600 dark:text-neutral-300 max-w-4xl mx-auto leading-relaxed"
               >
-                Exquisite custom cakes by Chef Tamanna Arzoo — crafted with love, artistry, and a sprinkle of magic. 
+                Exquisite custom cakes by Chef Tamanna Arzoo — crafted with love, artistry, and a sprinkle of magic.
                 Explore the portfolio and order via WhatsApp with one tap.
               </motion.p>
-              
+
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
-                className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-6 max-w-lg mx-auto"
+                className="flex flex-col sm:flex-row justify-center gap-3 items-center max-w-lg mx-auto"
               >
-                <MagneticButton 
-                  to="/portfolio" 
-                  className="hero-card shadow-glow font-semibold text-white px-8 py-4 text-lg"
-                >
+                <GooeyButton onClick={scrollToPortfolio}>
                   View Portfolio
-                </MagneticButton>
-                <MagneticButton 
-                  to="/find-us" 
-                  className="hero-card bg-white dark:bg-gray-800 text-black dark:text-white border border-black/20 dark:border-white/20 shadow-lg font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 px-8 py-4 text-lg"
-                >
+                </GooeyButton>
+
+                <GooeyButton onClick={() => navigate('/find-us')}>
                   Find Us
-                </MagneticButton>
+                </GooeyButton>
               </motion.div>
             </div>
           </div>
         </section>
 
+
         {/* Signature Showcase Section */}
-        <section className="relative py-16">
+        <section id="portfolio-preview" className="relative pb-16 pt-0">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <motion.h2
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="text-3xl sm:text-4xl lg:text-5xl font-bold text-center mb-16 bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 bg-clip-text text-transparent"
-            >
-              Signature Showcase
-            </motion.h2>
             <Showcase />
           </div>
         </section>
@@ -141,7 +161,7 @@ export default function Home(){
                     <span className="text-3xl mr-3">📍</span>
                     {findUsData?.location?.name || 'Cake N Crush'}
                   </h3>
-                  
+
                   <div className="space-y-4">
                     <div className="flex items-start space-x-3">
                       <span className="text-xl mt-1">🏠</span>
@@ -175,8 +195,8 @@ export default function Home(){
                   </div>
 
                   <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                    <MagneticButton 
-                      to="/find-us" 
+                    <MagneticButton
+                      to="/find-us"
                       className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4 px-6 rounded-xl font-semibold hover:shadow-lg transition-all duration-200 text-center block"
                     >
                       Get Directions & Full Details
@@ -208,12 +228,12 @@ export default function Home(){
                         </p>
                       </div>
                     </div>
-                    
+
                     {/* Decorative elements */}
                     <div className="absolute top-4 left-4">
                       <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse shadow-lg"></div>
                     </div>
-                    
+
                     <div className="absolute bottom-4 right-4">
                       <div className="bg-white/90 dark:bg-black/90 backdrop-blur px-3 py-1 rounded-full text-xs font-medium text-gray-700 dark:text-gray-300">
                         📍 Cake N Crush
@@ -245,14 +265,14 @@ export default function Home(){
                 Let's bring your dream cake to life! Browse our portfolio for inspiration or contact us directly to discuss your custom creation.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <MagneticButton 
-                  to="/portfolio" 
+                <MagneticButton
+                  to="/portfolio"
                   className="bg-white text-purple-600 hover:bg-gray-100 px-8 py-4 rounded-xl font-semibold shadow-lg"
                 >
                   Browse Portfolio
                 </MagneticButton>
-                <MagneticButton 
-                  to="/find-us" 
+                <MagneticButton
+                  to="/find-us"
                   className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-purple-600 px-8 py-4 rounded-xl font-semibold"
                 >
                   Contact Us
