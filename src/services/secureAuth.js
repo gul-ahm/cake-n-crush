@@ -8,7 +8,7 @@ class SecureAuthService {
     // Legacy token/user storage removed for cookie-based auth
     this.userKey = 'secure_user_meta';
     this.tokenKey = 'secure_user_token'; // fallback when cookie auth disabled
-    
+
     // Debug logging
     console.log('🔧 SecureAuth Service Initialized:');
     console.log('📍 API Endpoint:', this.apiEndpoint);
@@ -18,7 +18,7 @@ class SecureAuthService {
       VITE_API_KEY: import.meta.env.VITE_API_KEY ? 'Set' : 'Missing',
       VITE_ACCESS_ROUTE: import.meta.env.VITE_ACCESS_ROUTE
     });
-    
+
     // CRITICAL: Validate endpoint is not undefined (cache-busting check)
     if (this.apiEndpoint === 'undefined' || !this.apiEndpoint) {
       console.error('🚨 CRITICAL: API endpoint is undefined! Using emergency fallback.');
@@ -35,7 +35,7 @@ class SecureAuthService {
         console.warn('⚠️ Detected localhost API endpoint on production host. Overriding to /api/auth');
         this.apiEndpoint = '/api/auth';
       }
-    } catch {}
+    } catch { }
   }
 
   // Encrypt sensitive data before storing
@@ -100,7 +100,7 @@ class SecureAuthService {
     console.log('🔐 Starting login process...');
     console.log('📍 Endpoint:', this.apiEndpoint);
     console.log('👤 Username:', username);
-    
+
     try {
       const handshake = await this.ensureHandshake();
       if (!handshake) {
@@ -111,10 +111,10 @@ class SecureAuthService {
         password,
         handshake
       };
-      
+
       console.log('📤 Sending request to:', `${this.apiEndpoint}/login (handshake mode)`);
       console.log('📋 Request body:', { ...requestBody, password: '***' });
-      
+
       const response = await fetch(`${this.apiEndpoint}/login`, {
         method: 'POST',
         headers: {
@@ -210,7 +210,7 @@ class SecureAuthService {
   setupAutoLogout(expiresIn) {
     // Clear any existing timeout
     if (this.logoutTimer) clearTimeout(this.logoutTimer);
-    
+
     // Set new timeout
     this.logoutTimer = setTimeout(() => {
       this.logout();
@@ -227,11 +227,11 @@ class SecureAuthService {
         method: 'POST',
         headers: { 'X-Requested-With': 'XMLHttpRequest' },
         credentials: 'include'
-      }).catch(() => {});
+      }).catch(() => { });
     } finally {
       // Clear local session data
       sessionStorage.removeItem(this.userKey);
-      
+
       // Clear timeout
       if (this.logoutTimer) {
         clearTimeout(this.logoutTimer);
@@ -242,7 +242,7 @@ class SecureAuthService {
 
   // Generate obfuscated admin route
   getAdminRoute() {
-    const baseRoute = import.meta.env.VITE_ACCESS_ROUTE;
+    const baseRoute = import.meta.env.VITE_ACCESS_ROUTE || 's3cur3-m4n4g3m3nt-p0rt4l-x9z';
     return `/${baseRoute}`;
   }
 
